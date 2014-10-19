@@ -1,0 +1,281 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+/* UDE
+ * To enable more advanced encoding detection, add a reference to the appropriate librarie and
+ * decomment the following code as well any other part of the class marked 'UDE'.
+ *
+ * Ude is a C# port of Mozilla Universal Charset Detector.
+ * https://code.google.com/p/ude/ 
+*/
+//using Ude;
+
+namespace Uncomplicated.Csv
+{
+	/// <summary>
+	/// Class for parsing a csv flat file. Does not care about the type of end of line.
+	/// </summary>
+	public class CsvReader : IDisposable
+	{
+		/// <summary>
+		/// Configuration
+		/// </summary>
+		public readonly CsvReaderSettings Settings;
+
+		private readonly StreamReader Reader;
+
+		public CsvReader(Stream stream)
+			: this(stream, new CsvReaderSettings())
+		{
+		}
+
+		public CsvReader(Stream stream, CsvReaderSettings settings)
+		{
+			this.Settings = settings ?? new CsvReaderSettings();
+
+			#region UDE
+			/* UDE */
+			/*
+			if (stream.CanSeek && settings.DetectEncodingFromByteOrderMarks)
+			{
+				try
+				{
+					string charset = DetectCharset(stream);
+
+					if (!string.IsNullOrWhiteSpace(charset))
+					{
+						settings.Encoding = Encoding.GetEncoding(charset);
+					}
+				}
+				catch (Exception e)
+				{
+				}
+			}
+			*/
+			#endregion
+
+			if (this.Settings.Encoding == null)
+			{
+				Reader = new StreamReader(stream, settings.DetectEncodingFromByteOrderMarks);
+			}
+			else
+			{
+				Reader = new StreamReader(stream, settings.Encoding, settings.DetectEncodingFromByteOrderMarks);
+			}
+			settings.Encoding = Reader.CurrentEncoding;
+			settings.Readonly = true;
+		}
+
+		/// <summary>
+		/// Reads one row in the stream. Does not care whether there are carriage returns or not.
+		/// </summary>
+		/// <returns></returns>
+		public string[] Read()
+		{
+			if (Reader.Peek() < 0)
+			{
+				return null;
+			}
+
+			List<string> columns = null;
+			Stack<string> stack = new Stack<string>();
+			char c = '\0';
+			bool qualifierStart = false;
+			bool qualifierEnd = false;
+			bool newCell = true;
+
+			string escapedQualifier = string.Concat(Settings.TextQualifier, Settings.TextQualifier);
+
+			// common operations anonymous helper method
+			// for a better readability of the algorithm
+			#region Helper anonymous methods
+			Action push = () => stack.Push(c.ToString());
+			Action escapeQualifier = () => stack.Push(escapedQualifier);
+			Func<bool> isQualifier = () => c == Settings.TextQualifier;
+			Func<bool> isSeparator = () => c == Settings.ColumnSeparator;
+			Func<bool> peekQualifier = () => stack.Count > 0 && stack.Peek() == Settings.TextQualifier.ToString();
+			Func<string> peek = () => stack.Count > 0 ? stack.Peek() : null;
+			Func<string> pop = () => stack.Count > 0 ? stack.Pop() : null;
+			Func<bool> peekCR = () => stack.Count > 0 && stack.Peek() == "\r";
+			Func<bool> peekEOL = () => stack.Count > 0 && stack.Peek() == "\n";
+			Func<bool> peekReaderEOL = () => Reader.Peek() > 0 && (char)Reader.Peek() == '\n';
+			Func<bool> eol = () => c == '\n';
+			Func<bool> cr = () => c == '\r';
+
+			Action addCell = () =>
+			{
+				StringBuilder sbuf = new StringBuilder();
+				while (stack.Count > 0)
+				{
+					string txt = pop();
+					if (txt == escapedQualifier)
+					{
+						txt = Settings.TextQualifier.ToString();
+					}
+					sbuf.Insert(0, txt);
+				}
+				if (columns == null)
+				{
+					columns = new List<string>();
+				}
+				columns.Add(sbuf.ToString());
+				newCell = true;
+				qualifierEnd = qualifierStart = false;
+			};
+			#endregion
+
+			#region Line parsing
+			while (Reader.Peek() >= 0)
+			{
+				c = (char)Reader.Read();
+
+				#region New cell
+				if (newCell)
+				{
+					// starting new cell
+
+					newCell = false;
+
+					if (eol())
+					{
+						// empty row
+						break;
+					}
+					if (cr())
+					{
+						// empty row
+						if (peekReaderEOL())
+						{
+							//discard
+							Reader.Read();
+						}
+						break;
+					}
+
+					if (isQualifier())
+					{
+						// text qualified cell
+						qualifierStart = true;
+					}
+					else if (!isSeparator())
+					{
+						// first character
+						push();
+					}
+					else
+					{
+						// empty cell
+						addCell();
+					}
+				}
+				#endregion
+
+				#region Text qualifier
+				else if (isQualifier())
+				{
+					// process text qualifier
+
+					if (qualifierStart && peekQualifier())
+					{
+						// needs escaping
+						// escaped quotes will be resolved when the cell is assembled
+						pop();
+						escapeQualifier();
+					}
+					else
+					{
+						// add qualifier on the stack
+						push();
+					}
+				}
+				#endregion
+
+				#region Other characters
+				else
+				{
+					// process regular characters
+
+					if (peekQualifier() && !qualifierEnd)
+					{
+						// last qualifier is the closing qualifier
+						pop();
+						qualifierEnd = true;
+					}
+
+					// old mac or windows EOL
+					if (cr() && (!qualifierStart || qualifierEnd))
+					{
+						if (peekReaderEOL())
+						{
+							//discard
+							Reader.Read();
+						}
+						break;
+					}
+
+					// unix EOL
+					if (eol() && (!qualifierStart || qualifierEnd))
+					{
+						// end of row
+						break;
+					}
+
+					if (isSeparator() && (!qualifierStart || qualifierEnd))
+					{
+						// end of cell
+						addCell();
+					}
+					else
+					{
+						// add character on the stack
+						push();
+					}
+				}
+				#endregion
+			}
+
+			// left over cell
+			if (stack.Count > 0)
+			{
+				// last cell
+				addCell();
+			}
+			#endregion
+
+			return columns == null ? null : columns.ToArray();
+		}
+
+		public void Dispose()
+		{
+			if (Reader != null)
+			{
+				Reader.Close();
+				Reader.Dispose();
+			}
+		}
+
+		#region UDE
+		/* UDE */
+		/*
+		/// <summary>
+		/// Attempts to detect encoding.
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <returns></returns>
+		public static string DetectCharset(Stream stream)
+		{
+			ICharsetDetector cdet = new CharsetDetector();
+			cdet.Feed(stream);
+			cdet.DataEnd();
+			if (stream.CanSeek)
+			{
+				stream.Seek(0, SeekOrigin.Begin);
+			}
+			return cdet.Charset;
+		}
+		*/
+		#endregion
+	}
+}
