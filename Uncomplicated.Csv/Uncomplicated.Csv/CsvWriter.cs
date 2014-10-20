@@ -55,7 +55,7 @@ namespace Uncomplicated.Csv
 						cell.Contains(Settings.ColumnSeparator)
 						|| cell.Contains('\r')
 						|| cell.Contains('\n')
-						|| cell.Contains('"'))
+						|| cell.Contains(Settings.TextQualifier))
 					{
 						cell = TextQualify(cell);
 					}
