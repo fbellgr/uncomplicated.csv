@@ -37,7 +37,9 @@ namespace Uncomplicated.Csv
 					{
 						for (int i = 0; i < row.Length; ++i)
 						{
-							dt.Columns[i].ColumnName = string.Concat("F", i + 1);
+							string name = string.Concat("F", i + 1);
+							dt.Columns.Add(name, typeof(string));
+							dt.Columns[i].ColumnName = name;
 						}
 					}
 					dt.Rows.Add(row.Select(r => r.Trim()).ToArray());
@@ -79,11 +81,12 @@ namespace Uncomplicated.Csv
 						int i = 1;
 						if (dt.Columns.Contains(name))
 						{
+							string namebkp = name;
 							// column name redundancy
-							// redundant column names are automatically numbered (ex: col, col1, col2)
+							// redundant column names are automatically numbered (ex: col, col_1, col_2)
 							while (dt.Columns.Contains(name))
 							{
-								name = string.Concat(name, i);
+								name = string.Concat(namebkp, "_", i);
 								++i;
 							}
 						}
