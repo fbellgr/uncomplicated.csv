@@ -41,7 +41,7 @@ namespace Uncomplicated.Csv
 							dt.Columns.Add(name, typeof(string));
 						}
 					}
-					dt.Rows.Add(row.Select(r => r.Trim()).ToArray());
+					dt.Rows.Add(row);
 					++ri;
 				}
 			}
