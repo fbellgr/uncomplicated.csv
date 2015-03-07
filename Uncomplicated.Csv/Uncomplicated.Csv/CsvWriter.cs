@@ -32,8 +32,8 @@ namespace Uncomplicated.Csv
 			{
 				Writer = new StreamWriter(stream);
 			}
-			settings.Encoding = Writer.Encoding;
-			settings.Readonly = true;
+			Settings.Encoding = Writer.Encoding;
+			Settings.Readonly = true;
 		}
 
 		private string TextQualify(string cell)
