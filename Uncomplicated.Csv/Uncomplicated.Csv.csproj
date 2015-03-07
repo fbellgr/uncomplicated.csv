@@ -45,6 +45,7 @@
     <Compile Include="Uncomplicated.Csv\CsvReaderSettings.cs" />
     <Compile Include="Uncomplicated.Csv\CsvReader.cs" />
     <Compile Include="Uncomplicated.Csv\CsvException.cs" />
+    <Compile Include="Uncomplicated.Csv\CsvUtil.cs" />
     <Compile Include="Uncomplicated.Csv\CsvWriter.cs" />
     <Compile Include="Uncomplicated.Csv\CsvWriterSettings.cs" />
     <Compile Include="Uncomplicated.Csv\Enums.cs" />

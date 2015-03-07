@@ -47,7 +47,7 @@ namespace Uncomplicated.Csv
 			get { return m_textQualifier ?? '"'; }
 			set
 			{
-				if (!Readonly)  { m_textQualifier = value; }
+				if (!Readonly) { m_textQualifier = value; }
 				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.TextQualifier'")); }
 			}
 		}
@@ -84,6 +84,14 @@ namespace Uncomplicated.Csv
 
 		public CsvReaderSettings()
 		{
+		}
+
+		internal CsvReaderSettings Clone()
+		{
+			var clone = MemberwiseClone() as CsvReaderSettings;
+			clone.Readonly = false;
+			clone.Encoding = Encoding == null ? null : Encoding.Clone() as Encoding;
+			return clone;
 		}
 	}
 }

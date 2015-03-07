@@ -22,7 +22,7 @@ namespace Uncomplicated.Csv
 
 		public CsvWriter(Stream stream, CsvWriterSettings settings)
 		{
-			this.Settings = settings ?? new CsvWriterSettings();
+			this.Settings = settings == null ? new CsvWriterSettings() : settings.Clone();
 
 			if (settings.Encoding != null)
 			{
@@ -69,11 +69,19 @@ namespace Uncomplicated.Csv
 			return cell;
 		}
 
+		/// <summary>
+		/// Writes a row
+		/// </summary>
+		/// <param name="cells">Cells to be written</param>
 		public void WriteRow(params string[] cells)
 		{
 			WriteRow(cells.ToList());
 		}
 
+		/// <summary>
+		/// Writes a row
+		/// </summary>
+		/// <param name="cells">Cells to be written</param>
 		public void WriteRow(IEnumerable<string> cells)
 		{
 			string row = string.Join(Settings.ColumnSeparator.ToString(), cells.Select(cell => ConvertCell(cell)));

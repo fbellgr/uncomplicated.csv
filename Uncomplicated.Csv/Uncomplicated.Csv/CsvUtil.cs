@@ -9,6 +9,13 @@ namespace Uncomplicated.Csv
 {
 	public class CsvUtil
 	{
+		/// <summary>
+		/// Extracts a CSV file to a DataTable
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="columnNamesInFirstRow"></param>
+		/// <param name="settings"></param>
+		/// <returns></returns>
 		public static DataTable GetDataTable(Stream stream, bool columnNamesInFirstRow, CsvReaderSettings settings)
 		{
 			DataTable dt = new DataTable();
@@ -16,7 +23,7 @@ namespace Uncomplicated.Csv
 			using (CsvReader reader = new CsvReader(stream, settings))
 			{
 
-				// noms des colonnes
+				// column names
 				if (columnNamesInFirstRow)
 				{
 					CreateHeaders(reader, dt);
@@ -42,7 +49,7 @@ namespace Uncomplicated.Csv
 		}
 
 		/// <summary>
-		/// Définition des noms de colonne à partir de la première ligne
+		/// Extraction of the column names from the first row
 		/// </summary>
 		/// <param name="reader"></param>
 		/// <param name="dt"></param>
@@ -58,9 +65,8 @@ namespace Uncomplicated.Csv
 					bool empty = name.Length == 0;
 					if (empty)
 					{
-						// cellule vide, pas de nom
-						// on en génère un mais cette colonne ne pourra pas être utilisée
-						Console.Error.WriteLine("Empty column name in table '{0}': {1}", dt.TableName, columnIndex + 1);
+						// empty cell - undefined
+						// automatic generation "F#'
 						int i = 0;
 						while (dt.Columns.Contains(name))
 						{
@@ -73,10 +79,8 @@ namespace Uncomplicated.Csv
 						int i = 1;
 						if (dt.Columns.Contains(name))
 						{
-							// nom de colonne déjà utilisé
-							// on en génère un mais cette colonne ne pourra pas être utilisée
-
-							Console.Error.WriteLine("Redundant column name in table '{0}'({1}): {2}", dt.TableName, columnIndex + 1, name);
+							// column name redundancy
+							// redundant column names are automatically numbered (ex: col, col1, col2)
 							while (dt.Columns.Contains(name))
 							{
 								name = string.Concat(name, i);

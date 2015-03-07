@@ -11,6 +11,7 @@ using System.IO;
  * https://code.google.com/p/ude/ 
 */
 //using Ude;
+using System.Data;
 
 namespace Uncomplicated.Csv
 {
@@ -33,7 +34,7 @@ namespace Uncomplicated.Csv
 
 		public CsvReader(Stream stream, CsvReaderSettings settings)
 		{
-			this.Settings = settings ?? new CsvReaderSettings();
+			this.Settings = settings == null ? new CsvReaderSettings() : settings.Clone();
 
 			#region UDE
 			/* UDE */
@@ -90,7 +91,7 @@ namespace Uncomplicated.Csv
 
 			// common operations anonymous helper method
 			// for a better readability of the algorithm
-			#region Helper anonymous methods
+			
 			Action push = () => stack.Push(c.ToString());
 			Action escapeQualifier = () => stack.Push(escapedQualifier);
 			Func<bool> isQualifier = () => c == Settings.TextQualifier;
@@ -124,14 +125,12 @@ namespace Uncomplicated.Csv
 				newCell = true;
 				qualifierEnd = qualifierStart = false;
 			};
-			#endregion
 
-			#region Line parsing
+			// Line parsing
 			while (Reader.Peek() >= 0)
 			{
 				c = (char)Reader.Read();
 
-				#region New cell
 				if (newCell)
 				{
 					// starting new cell
@@ -170,9 +169,9 @@ namespace Uncomplicated.Csv
 						addCell();
 					}
 				}
-				#endregion
+				
 
-				#region Text qualifier
+				// Text qualifier
 				else if (isQualifier())
 				{
 					// process text qualifier
@@ -190,9 +189,8 @@ namespace Uncomplicated.Csv
 						push();
 					}
 				}
-				#endregion
-
-				#region Other characters
+				
+				// Other characters
 				else
 				{
 					// process regular characters
@@ -233,7 +231,7 @@ namespace Uncomplicated.Csv
 						push();
 					}
 				}
-				#endregion
+
 			}
 
 			// left over cell
@@ -242,7 +240,6 @@ namespace Uncomplicated.Csv
 				// last cell
 				addCell();
 			}
-			#endregion
 
 			return columns == null ? null : columns.ToArray();
 		}

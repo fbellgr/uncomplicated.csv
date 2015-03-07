@@ -52,7 +52,7 @@ namespace Uncomplicated.Csv
 			}
 		}
 		private CsvNewLineMode? m_newLineMode = null;
-		
+
 		/// <summary>
 		/// Character used for text qualification. There is no validation so be sure to put something printable in there.
 		/// Default is double quotes.
@@ -83,9 +83,17 @@ namespace Uncomplicated.Csv
 			}
 		}
 		private CsvTextQualification? m_textQualification = null;
-		
+
 		public CsvWriterSettings()
 		{
+		}
+
+		internal CsvWriterSettings Clone()
+		{
+			var clone = MemberwiseClone() as CsvWriterSettings;
+			clone.Readonly = false;
+			clone.Encoding = Encoding == null ? null : Encoding.Clone() as Encoding;
+			return clone;
 		}
 	}
 
