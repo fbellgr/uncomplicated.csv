@@ -39,7 +39,6 @@ namespace Uncomplicated.Csv
 						{
 							string name = string.Concat("F", i + 1);
 							dt.Columns.Add(name, typeof(string));
-							dt.Columns[i].ColumnName = name;
 						}
 					}
 					dt.Rows.Add(row.Select(r => r.Trim()).ToArray());
