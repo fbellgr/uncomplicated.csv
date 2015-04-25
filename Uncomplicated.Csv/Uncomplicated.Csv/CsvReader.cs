@@ -91,8 +91,9 @@ namespace Uncomplicated.Csv
 
 			// common operations anonymous helper method
 			// for a better readability of the algorithm
-			
+
 			Action push = () => stack.Push(c.ToString());
+			Action<string> pushStr = (pushed) => stack.Push(pushed);
 			Action escapeQualifier = () => stack.Push(escapedQualifier);
 			Func<bool> isQualifier = () => c == Settings.TextQualifier;
 			Func<bool> isSeparator = () => c == Settings.ColumnSeparator;
@@ -115,7 +116,14 @@ namespace Uncomplicated.Csv
 					{
 						txt = Settings.TextQualifier.ToString();
 					}
-					sbuf.Insert(0, txt);
+					else if (txt == Settings.TextQualifier.ToString() && qualifierStart && !qualifierEnd)
+					{
+						txt = string.Empty;
+					}
+					if (!string.IsNullOrEmpty(txt))
+					{
+						sbuf.Insert(0, txt);
+					}
 				}
 				if (columns == null)
 				{
@@ -169,7 +177,7 @@ namespace Uncomplicated.Csv
 						addCell();
 					}
 				}
-				
+
 
 				// Text qualifier
 				else if (isQualifier())
@@ -189,16 +197,17 @@ namespace Uncomplicated.Csv
 						push();
 					}
 				}
-				
+
 				// Other characters
 				else
 				{
 					// process regular characters
 
-					if (peekQualifier() && !qualifierEnd)
+					if (peekQualifier() && qualifierStart && !qualifierEnd)
 					{
 						// last qualifier is the closing qualifier
 						pop();
+						pushStr(string.Empty);
 						qualifierEnd = true;
 					}
 
