@@ -1,7 +1,9 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uncomplicated.Csv", "Uncomplicated.Csv.csproj", "{E6798640-C0F2-4326-8C10-8AD2DFB619AE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uncomplicated.Csv.Sample", "..\Uncomplicated.Csv.Sample\Uncomplicated.Csv.Sample.csproj", "{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,6 +25,16 @@ Global
 		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Release|x86.ActiveCfg = Release|Any CPU
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Debug|Any CPU.ActiveCfg = Debug|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Debug|x86.ActiveCfg = Debug|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Debug|x86.Build.0 = Debug|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Release|Any CPU.ActiveCfg = Release|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Release|Mixed Platforms.ActiveCfg = Release|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Release|Mixed Platforms.Build.0 = Release|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Release|x86.ActiveCfg = Release|x86
+		{663C29E3-C33D-43D3-A667-2D1BA5DFFCB8}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

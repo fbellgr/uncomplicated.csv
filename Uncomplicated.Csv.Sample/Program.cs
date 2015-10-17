@@ -11,13 +11,62 @@ namespace Uncomplicated.Csv.Sample
 	{
 		static void Main(string[] args)
 		{
+			//TestWriteRead();
+			//TestReadFromText();
+			TestReadFromFile();
+		}
+
+		private static void TestReadFromFile()
+		{
+			string path = @"U:\tmp\test-read.csv";
+
+			CsvReaderSettings settings = new CsvReaderSettings();
+			settings.ColumnSeparator = ',';
+			settings.DetectEncodingFromByteOrderMarks = true;
+
+			using (var stream = File.OpenRead(path))
+			using (CsvReader reader = new CsvReader(stream, settings))
+			{
+				string[] line = null;
+				while ((line = reader.Read()) != null)
+				{
+					Console.WriteLine(string.Join(string.Join(",", line.Select(c => string.Join(c, "\"", "\""))), "[", "]"));
+				}
+			}
+
+		}
+
+		private static void TestReadFromText()
+		{
+			//			string txt = @"""a"",""b"",""c""
+			//"""",""d"",""""
+			//"""","""",""e""
+			//""f"","""",""""";
+
+			string txt = @"3""33""""3";
+
+			CsvReaderSettings settings = new CsvReaderSettings();
+			settings.ColumnSeparator = ',';
+
+
+			using (MemoryStream ms = new MemoryStream(Encoding.Default.GetBytes(txt)))
+			using (CsvReader reader = new CsvReader(ms, settings))
+			{
+				string[] line = null;
+				while ((line = reader.Read()) != null)
+				{
+					Console.WriteLine(string.Join(string.Join(",", line.Select(c => string.Join(c, "\"", "\""))), "[", "]"));
+				}
+			}
+
+		}
+
+		private static void TestWriteRead()
+		{
 			string path = @"U:\tmp\test.csv";
 
-			if (!string.IsNullOrWhiteSpace(path))
-			{
-				Write(path);
-				Read(path);
-			}
+			Write(path);
+			Read(path);
 		}
 
 		static void Read(string path)
@@ -27,12 +76,12 @@ namespace Uncomplicated.Csv.Sample
 			settings.Encoding = Encoding.UTF8;
 			settings.TextQualification = CsvTextQualification.AsNeeded;
 			settings.TextQualifier = '"';
-						
+
 			using (Stream stream = File.OpenRead(path))
 			using (CsvReader reader = new CsvReader(stream, settings))
 			{
 				string[] row = null;
-				int i=1;
+				int i = 1;
 				while ((row = reader.Read()) != null)
 				{
 					Console.WriteLine(string.Concat("Row ", i, ":"));

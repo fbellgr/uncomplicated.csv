@@ -88,6 +88,97 @@ namespace Uncomplicated.Csv
 		{
 		}
 
+		/// <summary>
+		/// Qualifies
+		/// </summary>
+		/// <param name="cell"></param>
+		/// <returns></returns>
+		public string TextQualify(string cell)
+		{
+			cell = string.Concat(
+				TextQualifier,
+				cell.Replace(TextQualifier.ToString(), string.Concat(TextQualifier, TextQualifier)),
+				TextQualifier
+			);
+			return cell;
+		}
+
+		/// <summary>
+		/// Escapes and qualifies
+		/// </summary>
+		/// <param name="cell"></param>
+		/// <returns></returns>
+		public string ConvertCell(string cell)
+		{
+			switch (TextQualification)
+			{
+				case CsvTextQualification.AsNeeded:
+					if (
+						cell.Contains(ColumnSeparator)
+						|| cell.Contains('\r')
+						|| cell.Contains('\n')
+						|| cell.Contains(TextQualifier))
+					{
+						cell = TextQualify(cell);
+					}
+					break;
+
+				case CsvTextQualification.Always:
+					cell = TextQualify(cell);
+					break;
+			}
+
+			return cell;
+		}
+
+		/// <summary>
+		/// Obtains the appropriate end of line string.
+		/// </summary>
+		/// <returns></returns>
+		public string GetEOL()
+		{
+			string eol = string.Empty;
+
+			switch (NewLineMode)
+			{
+				case CsvNewLineMode.OldMac:
+					eol = "\r";
+					break;
+
+				default:
+				case CsvNewLineMode.Windows:
+					eol = "\r\n";
+					break;
+
+				case CsvNewLineMode.Unix:
+					eol = "\n";
+					break;
+			}
+
+			return eol;
+		}
+
+		/// <summary>
+		/// Produces the data to be written for a single row.
+		/// </summary>
+		/// <param name="cells"></param>
+		/// <returns></returns>
+		public string CreateRow(params string[] cells)
+		{
+			return CreateRow(cells.ToList());
+		}
+
+		/// <summary>
+		/// Produces the data to be written for a single row.
+		/// </summary>
+		/// <param name="cells"></param>
+		/// <returns></returns>
+		public string CreateRow(IEnumerable<string> cells)
+		{
+			string row = string.Join(ColumnSeparator.ToString(), cells.Select(cell => ConvertCell(cell)));
+			return row;
+		}
+
 		internal CsvWriterSettings Clone()
 		{
 			var clone = MemberwiseClone() as CsvWriterSettings;

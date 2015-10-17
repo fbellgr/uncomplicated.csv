@@ -158,6 +158,7 @@ namespace Uncomplicated.Csv
 							//discard
 							Reader.Read();
 						}
+						pushStr(string.Empty);
 						break;
 					}
 
@@ -244,13 +245,62 @@ namespace Uncomplicated.Csv
 			}
 
 			// left over cell
-			if (stack.Count > 0)
+			if (stack.Count > 0 || isSeparator())
 			{
 				// last cell
 				addCell();
 			}
 
 			return columns == null ? null : columns.ToArray();
+		}
+
+		/// <summary>
+		/// Skips a line
+		/// </summary>
+		/// <returns></returns>
+		public string Skip()
+		{
+			StringBuilder line = null;
+			char last = '\0';
+			bool cr = false;
+			bool nl = false;
+			if (Reader.Peek() >= 0)
+			{
+				line = new StringBuilder();
+			}
+
+			while (Reader.Peek() >= 0)
+			{
+
+				char c = (char)Reader.Peek();
+				if (c == '\r')
+				{
+					Reader.Read();
+					cr = true;
+				}
+				else if (c == '\n')
+				{
+					Reader.Read();
+					nl = true;
+					break;
+				}
+				else
+				{
+					if (last != '\r')
+					{
+						Reader.Read();
+						line.Append(c);
+					}
+					else
+					{
+						break;
+					}
+				}
+
+				last = c;
+			}
+
+			return line == null ? null : line.ToString();
 		}
 
 		public void Dispose()

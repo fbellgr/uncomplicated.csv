@@ -36,39 +36,6 @@ namespace Uncomplicated.Csv
 			Settings.Readonly = true;
 		}
 
-		private string TextQualify(string cell)
-		{
-			cell = string.Concat(
-				Settings.TextQualifier,
-				cell.Replace(Settings.TextQualifier.ToString(), string.Concat(Settings.TextQualifier, Settings.TextQualifier)),
-				Settings.TextQualifier
-			);
-			return cell;
-		}
-
-		private string ConvertCell(string cell)
-		{
-			switch (Settings.TextQualification)
-			{
-				case CsvTextQualification.AsNeeded:
-					if (
-						cell.Contains(Settings.ColumnSeparator)
-						|| cell.Contains('\r')
-						|| cell.Contains('\n')
-						|| cell.Contains(Settings.TextQualifier))
-					{
-						cell = TextQualify(cell);
-					}
-					break;
-
-				case CsvTextQualification.Always:
-					cell = TextQualify(cell);
-					break;
-			}
-
-			return cell;
-		}
-
 		/// <summary>
 		/// Writes a row
 		/// </summary>
@@ -84,23 +51,9 @@ namespace Uncomplicated.Csv
 		/// <param name="cells">Cells to be written</param>
 		public void WriteRow(IEnumerable<string> cells)
 		{
-			string row = string.Join(Settings.ColumnSeparator.ToString(), cells.Select(cell => ConvertCell(cell)));
+			string row = Settings.CreateRow(cells);
 			Writer.Write(row);
-			switch (Settings.NewLineMode)
-			{
-				case CsvNewLineMode.OldMac:
-					Writer.Write("\r");
-					break;
-
-				case CsvNewLineMode.Windows:
-					Writer.Write("\r\n");
-					break;
-
-				case CsvNewLineMode.Unix:
-					Writer.Write("\n");
-					break;
-
-			}
+			Writer.Write(Settings.GetEOL());
 		}
 
 		public void Dispose()
