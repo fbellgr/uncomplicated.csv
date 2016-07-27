@@ -3,14 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-/* UDE
- * To enable more advanced encoding detection, add a reference to the appropriate librarie and
- * decomment the following code as well any other part of the class marked 'UDE'.
- *
- * Ude is a C# port of Mozilla Universal Charset Detector.
- * https://code.google.com/p/ude/ 
-*/
-//using Ude;
 using System.Data;
 
 namespace Uncomplicated.Csv
@@ -35,27 +27,6 @@ namespace Uncomplicated.Csv
 		public CsvReader(Stream stream, CsvReaderSettings settings)
 		{
 			this.Settings = settings == null ? new CsvReaderSettings() : settings.Clone();
-
-			#region UDE
-			/* UDE */
-			/*
-			if (stream.CanSeek && settings.DetectEncodingFromByteOrderMarks)
-			{
-				try
-				{
-					string charset = DetectCharset(stream);
-
-					if (!string.IsNullOrWhiteSpace(charset))
-					{
-						settings.Encoding = Encoding.GetEncoding(charset);
-					}
-				}
-				catch (Exception e)
-				{
-				}
-			}
-			*/
-			#endregion
 
 			if (this.Settings.Encoding == null)
 			{
@@ -94,14 +65,14 @@ namespace Uncomplicated.Csv
 
 			Action push = () => stack.Push(c.ToString());
 			Action<string> pushStr = (pushed) => stack.Push(pushed);
+			Func<bool> enableQualification = () => Settings.TextQualification != CsvTextQualification.None;
+			Func<bool> isQualifierOpen = () => enableQualification() && qualifierStart && !qualifierEnd;
+			Func<bool> isQualifierClosed = () => enableQualification() && qualifierStart && qualifierEnd;
 			Action escapeQualifier = () => stack.Push(escapedQualifier);
-			Func<bool> isQualifier = () => c == Settings.TextQualifier;
+			Func<bool> isQualifier = () => enableQualification() && c == Settings.TextQualifier;
 			Func<bool> isSeparator = () => c == Settings.ColumnSeparator;
-			Func<bool> peekQualifier = () => stack.Count > 0 && stack.Peek() == Settings.TextQualifier.ToString();
-			Func<string> peek = () => stack.Count > 0 ? stack.Peek() : null;
+			Func<bool> peekQualifier = () => enableQualification() && stack.Count > 0 && stack.Peek() == Settings.TextQualifier.ToString();
 			Func<string> pop = () => stack.Count > 0 ? stack.Pop() : null;
-			Func<bool> peekCR = () => stack.Count > 0 && stack.Peek() == "\r";
-			Func<bool> peekEOL = () => stack.Count > 0 && stack.Peek() == "\n";
 			Func<bool> peekReaderEOL = () => Reader.Peek() > 0 && (char)Reader.Peek() == '\n';
 			Func<bool> eol = () => c == '\n';
 			Func<bool> cr = () => c == '\r';
@@ -112,13 +83,16 @@ namespace Uncomplicated.Csv
 				while (stack.Count > 0)
 				{
 					string txt = pop();
-					if (txt == escapedQualifier)
+					if (enableQualification())
 					{
-						txt = Settings.TextQualifier.ToString();
-					}
-					else if (txt == Settings.TextQualifier.ToString() && qualifierStart && !qualifierEnd)
-					{
-						txt = string.Empty;
+						if (txt == escapedQualifier)
+						{
+							txt = Settings.TextQualifier.ToString();
+						}
+						else if (txt == Settings.TextQualifier.ToString() && isQualifierOpen())
+						{
+							txt = string.Empty;
+						}
 					}
 					if (!string.IsNullOrEmpty(txt))
 					{
@@ -129,7 +103,12 @@ namespace Uncomplicated.Csv
 				{
 					columns = new List<string>();
 				}
-				columns.Add(sbuf.ToString());
+				var val = sbuf.ToString();
+				if (val == Settings.NullValue && !isQualifierClosed())
+				{
+					val = null;
+				}
+				columns.Add(val);
 				newCell = true;
 				qualifierEnd = qualifierStart = false;
 			};
@@ -148,6 +127,7 @@ namespace Uncomplicated.Csv
 					if (eol())
 					{
 						// empty row
+						pushStr(string.Empty);
 						break;
 					}
 					if (cr())
@@ -185,7 +165,7 @@ namespace Uncomplicated.Csv
 				{
 					// process text qualifier
 
-					if (qualifierStart && peekQualifier())
+					if (isQualifierOpen() && peekQualifier())
 					{
 						// needs escaping
 						// escaped quotes will be resolved when the cell is assembled
@@ -204,7 +184,7 @@ namespace Uncomplicated.Csv
 				{
 					// process regular characters
 
-					if (peekQualifier() && qualifierStart && !qualifierEnd)
+					if (peekQualifier() && isQualifierOpen())
 					{
 						// last qualifier is the closing qualifier
 						pop();
@@ -213,7 +193,7 @@ namespace Uncomplicated.Csv
 					}
 
 					// old mac or windows EOL
-					if (cr() && (!qualifierStart || qualifierEnd))
+					if (cr() && !isQualifierOpen())
 					{
 						if (peekReaderEOL())
 						{
@@ -224,13 +204,13 @@ namespace Uncomplicated.Csv
 					}
 
 					// unix EOL
-					if (eol() && (!qualifierStart || qualifierEnd))
+					if (eol() && !isQualifierOpen())
 					{
 						// end of row
 						break;
 					}
 
-					if (isSeparator() && (!qualifierStart || qualifierEnd))
+					if (isSeparator() && !isQualifierOpen())
 					{
 						// end of cell
 						addCell();
@@ -262,8 +242,6 @@ namespace Uncomplicated.Csv
 		{
 			StringBuilder line = null;
 			char last = '\0';
-			bool cr = false;
-			bool nl = false;
 			if (Reader.Peek() >= 0)
 			{
 				line = new StringBuilder();
@@ -276,12 +254,10 @@ namespace Uncomplicated.Csv
 				if (c == '\r')
 				{
 					Reader.Read();
-					cr = true;
 				}
 				else if (c == '\n')
 				{
 					Reader.Read();
-					nl = true;
 					break;
 				}
 				else
@@ -311,27 +287,5 @@ namespace Uncomplicated.Csv
 				Reader.Dispose();
 			}
 		}
-
-		#region UDE
-		/* UDE */
-		/*
-		/// <summary>
-		/// Attempts to detect encoding.
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <returns></returns>
-		public static string DetectCharset(Stream stream)
-		{
-			ICharsetDetector cdet = new CharsetDetector();
-			cdet.Feed(stream);
-			cdet.DataEnd();
-			if (stream.CanSeek)
-			{
-				stream.Seek(0, SeekOrigin.Begin);
-			}
-			return cdet.Charset;
-		}
-		*/
-		#endregion
 	}
 }

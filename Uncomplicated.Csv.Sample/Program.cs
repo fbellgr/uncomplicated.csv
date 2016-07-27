@@ -11,14 +11,14 @@ namespace Uncomplicated.Csv.Sample
 	{
 		static void Main(string[] args)
 		{
-			//TestWriteRead();
+			TestWriteRead();
 			//TestReadFromText();
-			TestReadFromFile();
+			//TestReadFromFile();
 		}
 
 		private static void TestReadFromFile()
 		{
-			string path = @"U:\tmp\test-read.csv";
+			string path = @"C:\tmp\test-read.csv";
 
 			CsvReaderSettings settings = new CsvReaderSettings();
 			settings.ColumnSeparator = ',';
@@ -63,7 +63,7 @@ namespace Uncomplicated.Csv.Sample
 
 		private static void TestWriteRead()
 		{
-			string path = @"U:\tmp\test.csv";
+			string path = @"c:\tmp\test.csv";
 
 			Write(path);
 			Read(path);

@@ -16,22 +16,6 @@ namespace Uncomplicated.Csv
 		/// <param name="columnNamesInFirstRow"></param>
 		/// <param name="settings"></param>
 		/// <returns></returns>
-		public static DataTable GetDataTable(Stream stream, bool columnNamesInFirstRow, CsvReaderSettings settings)
-		{
-			string[] skippedLines = null;
-			return GetDataTable(stream, 0, columnNamesInFirstRow, settings, out skippedLines);
-		}
-
-
-		/// <summary>
-		/// Extracts a CSV file to a DataTable
-		/// </summary>
-		/// <param name="stream"></param>
-		/// <param name="skipLines"></param>
-		/// <param name="columnNamesInFirstRow"></param>
-		/// <param name="settings"></param>
-		/// <param name="skippedLines"></param>
-		/// <returns></returns>
 		public static DataTable GetDataTable(Stream stream, int skipLines, bool columnNamesInFirstRow, CsvReaderSettings settings, out string[] skippedLines)
 		{
 			DataTable dt = new DataTable();
@@ -126,6 +110,15 @@ namespace Uncomplicated.Csv
 
 					++columnIndex;
 				}
+			}
+		}
+
+		internal static void ValidateCsvSettings(string nullValue, char separator, char textQualifier)
+		{
+			if (!string.IsNullOrWhiteSpace(nullValue)
+				&& nullValue.Intersect(new char[] { '\r', '\n', separator, textQualifier }).Any())
+			{
+				throw new CsvException(string.Format("NullValue cannot contain '\\r', '\\n', '{0}', '{1}'.", separator, textQualifier));
 			}
 		}
 	}

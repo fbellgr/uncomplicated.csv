@@ -24,6 +24,26 @@ namespace Uncomplicated.Csv
 		private Encoding m_encoding = null;
 
 		/// <summary>
+		/// Value to be rendered in place of null. 
+		/// CANNOT CONTAIN SEPARATOR OR NEWLINE OR TEXT-QUALIFIER.
+		/// Default is empty.
+		/// </summary>
+		public string NullValue
+		{
+			get { return m_nullValue ?? string.Empty; }
+			set
+			{
+				if (!Readonly)
+				{
+					m_nullValue = value;
+					ValidateSettings();
+				}
+				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.NullValue'")); }
+			}
+		}
+		private string m_nullValue = null;
+
+		/// <summary>
 		/// Character used as column separator. There is no validation so be sure to put something printable in there.
 		/// Default is comma.
 		/// </summary>
@@ -32,7 +52,11 @@ namespace Uncomplicated.Csv
 			get { return m_columnSeparator ?? ','; }
 			set
 			{
-				if (!Readonly) { m_columnSeparator = value; }
+				if (!Readonly)
+				{
+					m_columnSeparator = value;
+					ValidateSettings();
+				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.ColumnSeparator'")); }
 			}
 		}
@@ -62,7 +86,11 @@ namespace Uncomplicated.Csv
 			get { return m_textQualifier ?? '"'; }
 			set
 			{
-				if (!Readonly) { m_textQualifier = value; }
+				if (!Readonly)
+				{
+					m_textQualifier = value;
+					ValidateSettings();
+				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.TextQualifier'")); }
 			}
 		}
@@ -78,7 +106,11 @@ namespace Uncomplicated.Csv
 			get { return m_textQualification ?? CsvTextQualification.Always; }
 			set
 			{
-				if (!Readonly) { m_textQualification = value; }
+				if (!Readonly)
+				{
+					m_textQualification = value;
+					ValidateSettings();
+				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.TextQualification'")); }
 			}
 		}
@@ -110,6 +142,11 @@ namespace Uncomplicated.Csv
 		/// <returns></returns>
 		public string ConvertCell(string cell)
 		{
+			if (cell == null)
+			{
+				return NullValue;
+			}
+
 			switch (TextQualification)
 			{
 				case CsvTextQualification.AsNeeded:
@@ -185,6 +222,11 @@ namespace Uncomplicated.Csv
 			clone.Readonly = false;
 			clone.Encoding = Encoding == null ? null : Encoding.Clone() as Encoding;
 			return clone;
+		}
+
+		private void ValidateSettings()
+		{
+			CsvUtil.ValidateCsvSettings(NullValue, ColumnSeparator, TextQualification == CsvTextQualification.None ? '\0' : TextQualifier);
 		}
 	}
 
