@@ -22,6 +22,7 @@ namespace Uncomplicated.Csv.UnitTest
 """","""","""",""""
 ""ffff"",""g
 ggg"",""hhhh"",""iiii""
+"""","""","""",""""
 """","""","""",""""";
 
 			string csv = @"1,2,3,NULL
@@ -31,6 +32,7 @@ xx,NULL,yy,""zz""
 ,,,
 ""ffff"",""g
 ggg"",""hhhh"",""iiii""
+,,,
 ,,,";
 
 			var settings = new CsvReaderSettings()
