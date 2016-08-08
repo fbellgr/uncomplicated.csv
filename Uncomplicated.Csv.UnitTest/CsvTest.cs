@@ -12,26 +12,80 @@ namespace Uncomplicated.Csv.UnitTest
 	public class UnitTest1
 	{
 		[TestMethod]
+		public void TestReadQualifierNone()
+		{
+
+			string csv = @"1,2,3,NULL
+a1,""b,c"",""NULL"",d1
+"""","""","""",""""
+x1,NULL,y1,""z1""
+,,,
+""fghi"",""k
+lmop"",""qrsu"",""vwxy""
+,,,
+,,,";
+
+			string expectedResult = @"[1],[2],[3],NULL
+[a1],[""b],[c""],[""NULL""],[d1]
+[""""],[""""],[""""],[""""]
+[x1],NULL,[y1],[""z1""]
+[],[],[],[]
+[""fghi""],[""k]
+[lmop""],[""qrsu""],[""vwxy""]
+[],[],[],[]
+[],[],[],[]";
+
+			var settings = new CsvReaderSettings()
+			{
+				ColumnSeparator = ',',
+				Encoding = Encoding.UTF8,
+				NullValue = "NULL",
+				TextQualification = CsvTextQualification.None,
+				TextQualifier = '"'
+			};
+
+			var stream = new MemoryStream(settings.Encoding.GetBytes(csv));
+			var result = new StringBuilder();
+
+			using (var reader = new CsvReader(stream, settings))
+			{
+				string[] line = null;
+				while ((line = reader.Read()) != null)
+				{
+					result.AppendLine(string.Join(",", line.Select(c => c == null ? "NULL" : string.Format("[{0}]", c))));
+				}
+			}
+
+			Console.WriteLine("Expects:");
+			Console.WriteLine(expectedResult);
+			Console.WriteLine();
+			Console.WriteLine("Result:");
+			Console.WriteLine(result);
+
+			Assert.AreEqual(result.ToString().Trim(), expectedResult);
+		}
+
+		[TestMethod]
 		public void TestRead()
 		{
 
 			string expectedResult = @"""1"",""2"",""3"",NULL
-""aa"",""b,b"",""NULL"",""cc""
+""a1"",""b,c"",""NULL"",""d1""
 """","""","""",""""
-""xx"",NULL,""yy"",""zz""
+""x1"",NULL,""y1"",""z1""
 """","""","""",""""
-""ffff"",""g
-ggg"",""hhhh"",""iiii""
+""fghi"",""k
+lmop"",""qrsu"",""vwxy""
 """","""","""",""""
 """","""","""",""""";
 
 			string csv = @"1,2,3,NULL
-aa,""b,b"",""NULL"",cc
+a1,""b,c"",""NULL"",d1
 """","""","""",""""
-xx,NULL,yy,""zz""
+x1,NULL,y1,""z1""
 ,,,
-""ffff"",""g
-ggg"",""hhhh"",""iiii""
+""fghi"",""k
+lmop"",""qrsu"",""vwxy""
 ,,,
 ,,,";
 
@@ -73,20 +127,20 @@ ggg"",""hhhh"",""iiii""
 		{
 
 			string expectedResult = @"""1"",""2"",""3"",NULL
-""aa"",""bb"",""NULL"",""cc""
+""a1"",""b1"",""NULL"",""c1""
 """","""","""",""""
-""xx"",NULL,""yy"",""zz""
+""x1"",NULL,""y1"",""z1""
 """","""","""",""""
-""ffff"",""gggg"",""hhhh"",""iiii""
+""fghi"",""jklm"",""nopq"",""rstu""
 """","""","""",""""";
 
 			var csv = new List<string[]>() {
 				new string[]{ "1",		"2",	"3",	null },
-				new string[]{ "aa",		"bb",	"NULL",	"cc" },
+				new string[]{ "a1",		"b1",	"NULL",	"c1" },
 				new string[]{ "",		"",		"",		"" },
-				new string[]{ "xx",		null,	"yy",	"zz" },
+				new string[]{ "x1",		null,	"y1",	"z1" },
 				new string[]{ "",		"",		"",		"" },
-				new string[]{ "ffff",	"gggg",	"hhhh",	"iiii" },
+				new string[]{ "fghi",	"jklm",	"nopq",	"rstu" },
 				new string[]{ "",		"",		"",		"" }
 			};
 

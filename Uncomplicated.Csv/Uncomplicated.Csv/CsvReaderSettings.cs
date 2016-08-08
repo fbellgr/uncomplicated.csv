@@ -14,14 +14,14 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public Encoding Encoding
 		{
-			get { return m_encoding; }
+			get { return _encoding; }
 			set
 			{
-				if (!Readonly) { m_encoding = value; }
+				if (!Readonly) { _encoding = value; }
 				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.Encoding'")); }
 			}
 		}
-		private Encoding m_encoding = null;
+		private Encoding _encoding = null;
 
 		/// <summary>
 		/// Value to be interpreted as null
@@ -31,18 +31,18 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public string NullValue
 		{
-			get { return m_nullValue; }
+			get { return _nullValue; }
 			set
 			{
 				if (!Readonly)
 				{
-					m_nullValue = value;
+					_nullValue = value;
 					ValidateSettings();
 				}
-				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.NullValue'")); }
+				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.NullValue'")); }
 			}
 		}
-		private string m_nullValue = null;
+		private string _nullValue = null;
 
 		/// <summary>
 		/// Character used as column separator. There is no validation so be sure to put something printable in there.
@@ -50,18 +50,18 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public char ColumnSeparator
 		{
-			get { return m_columnSeparator ?? ','; }
+			get { return _columnSeparator; }
 			set
 			{
 				if (!Readonly)
 				{
-					m_columnSeparator = value;
+					_columnSeparator = value;
 					ValidateSettings();
 				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.ColumnSeparator'")); }
 			}
 		}
-		private char? m_columnSeparator = null;
+		private char _columnSeparator = ',';
 
 		/// <summary>
 		/// Character used for text qualification. There is no validation so be sure to put something printable in there.
@@ -69,18 +69,18 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public char TextQualifier
 		{
-			get { return m_textQualifier ?? '"'; }
+			get { return _textQualifier; }
 			set
 			{
 				if (!Readonly)
 				{
-					m_textQualifier = value;
+					_textQualifier = value;
 					ValidateSettings();
 				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.TextQualifier'")); }
 			}
 		}
-		private char? m_textQualifier = null;
+		private char _textQualifier = '"';
 
 		/// <summary>
 		/// Text qualilfication. When reading, Always and AsNeeded wil produced the same result.
@@ -89,32 +89,32 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public CsvTextQualification TextQualification
 		{
-			get { return m_textQualification ?? CsvTextQualification.Always; }
+			get { return _textQualification; }
 			set
 			{
 				if (!Readonly)
 				{
-					m_textQualification = value;
+					_textQualification = value;
 					ValidateSettings();
 				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.TextQualification'")); }
 			}
 		}
-		private CsvTextQualification? m_textQualification = null;
+		private CsvTextQualification _textQualification = CsvTextQualification.Always;
 
 		/// <summary>
 		/// Will determine whether to use encoding detection or not.
 		/// </summary>
 		public bool DetectEncodingFromByteOrderMarks
 		{
-			get { return m_detectEncodingFromByteOrderMarks ?? false; }
+			get { return _detectEncodingFromByteOrderMarks; }
 			set
 			{
-				if (!Readonly) { m_detectEncodingFromByteOrderMarks = value; }
+				if (!Readonly) { _detectEncodingFromByteOrderMarks = value; }
 				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.DetectEncodingFromByteOrderMarks'")); }
 			}
 		}
-		private bool? m_detectEncodingFromByteOrderMarks = null;
+		private bool _detectEncodingFromByteOrderMarks = false;
 
 		public CsvReaderSettings()
 		{

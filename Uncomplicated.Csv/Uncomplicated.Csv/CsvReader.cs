@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
+using Uncomplicated.Csv.Collection;
 
 namespace Uncomplicated.Csv
 {
@@ -11,12 +12,21 @@ namespace Uncomplicated.Csv
 	/// </summary>
 	public class CsvReader : IDisposable
 	{
+		private readonly object SyncRoot = new object();
+
 		/// <summary>
 		/// Configuration
 		/// </summary>
 		public readonly CsvReaderSettings Settings;
-
 		private readonly StreamReader Reader;
+
+		string _escapedQualifier = null;
+		string _qualiferString = null;
+		bool _enableQualification = false;
+
+		private int _bufferOffset = 0;
+		private int _bufferSize = 0;
+		private char[] _buffer = new char[4096];// 4k buffer
 
 		public CsvReader(Stream stream)
 			: this(stream, new CsvReaderSettings())
@@ -37,6 +47,113 @@ namespace Uncomplicated.Csv
 			}
 			Settings.Encoding = Reader.CurrentEncoding;
 			Settings.Readonly = true;
+
+			_enableQualification = Settings.TextQualification != CsvTextQualification.None;
+			_escapedQualifier = new string(Settings.TextQualifier, 2);
+			_qualiferString = new string(Settings.TextQualifier, 1);
+		}
+
+		private void PushEscapedQualifier(FakeStack stack)
+		{
+			stack.Push(_escapedQualifier);
+		}
+
+		private bool IsQualifierStarted(bool qualifierStart, bool qualifierEnd)
+		{
+			return _enableQualification && qualifierStart && !qualifierEnd;
+		}
+
+		private bool IsQualifierEnded(bool qualifierStart, bool qualifierEnd)
+		{
+			return _enableQualification && qualifierStart && qualifierEnd;
+		}
+
+		private bool IsQualifier(char c)
+		{
+			return _enableQualification && c.Equals(Settings.TextQualifier);
+		}
+
+		private bool IsSeparator(char c)
+		{
+			return c == Settings.ColumnSeparator;
+		}
+
+		private bool PeekQualifier(FakeStack stack)
+		{
+			return stack.Count > 0 && _enableQualification && stack.Peek(Settings.TextQualifier);
+		}
+
+		private bool PeekNewLine()
+		{
+			return PeekChar().Equals((int)'\n');
+		}
+
+		private bool IsNewLine(char c)
+		{
+			return c.Equals('\n');
+		}
+
+		private bool IsCarriageReturn(char c)
+		{
+			return c.Equals('\r');
+		}
+
+		private void AddCell(FakeStack stack, ref List<string> columns, ref bool newCell, ref bool qualifierStart, ref bool qualifierEnd)
+		{
+			var parts = new List<string>();
+			while (stack.Count > 0)
+			{
+				string txt = stack.Pop();
+				if (txt != null)
+				{
+					if (_enableQualification)
+					{
+						if (txt.Length == 2 && txt[0].Equals(Settings.TextQualifier) && txt[1].Equals(Settings.TextQualifier))
+						{
+							txt = _qualiferString;
+							parts.Add(txt);
+						}
+						else if (txt.Length != 1 || !txt[0].Equals(Settings.TextQualifier) || IsQualifierStarted(qualifierStart, qualifierEnd))
+						{
+							parts.Add(txt);
+						}
+					}
+					else
+					{
+						parts.Add(txt);
+					}
+				}
+			}
+
+			if (columns == null)
+			{
+				columns = new List<string>();
+			}
+
+			string val = string.Empty;
+
+			if (parts.Count > 2)
+			{
+				var sbuf = new StringBuilder();
+				for (int i = parts.Count - 1; i >= 0; --i)
+				{
+					sbuf.Append(parts[i]);
+				}
+				val = sbuf.ToString();
+			}
+			else
+			{
+				val = string.Concat(parts.Reverse<string>());
+			}
+
+			if (val.Equals(Settings.NullValue) && !IsQualifierEnded(qualifierStart, qualifierEnd))
+			{
+				val = null;
+			}
+
+			columns.Add(val);
+			newCell = true;
+			qualifierEnd = qualifierStart = false;
 		}
 
 		/// <summary>
@@ -45,77 +162,37 @@ namespace Uncomplicated.Csv
 		/// <returns></returns>
 		public string[] Read()
 		{
-			if (Reader.Peek() < 0)
+			lock (SyncRoot)
+			{
+				return ReadRow();
+			}
+		}
+
+		/// <summary>
+		/// Reads one row in the stream. Does not care whether there are carriage returns or not.
+		/// </summary>
+		/// <returns></returns>
+		private string[] ReadRow()
+		{
+			if (PeekChar() < 0)
 			{
 				return null;
 			}
 
 			List<string> columns = null;
-			Stack<string> stack = new Stack<string>();
+			var stack = new FakeStack();
 			char c = '\0';
 			bool qualifierStart = false;
 			bool qualifierEnd = false;
 			bool newCell = true;
 
-			string escapedQualifier = string.Concat(Settings.TextQualifier, Settings.TextQualifier);
-
 			// common operations anonymous helper method
 			// for a better readability of the algorithm
 
-			Action push = () => stack.Push(c.ToString());
-			Action<string> pushStr = (pushed) => stack.Push(pushed);
-			Func<bool> enableQualification = () => Settings.TextQualification != CsvTextQualification.None;
-			Func<bool> isQualifierOpen = () => enableQualification() && qualifierStart && !qualifierEnd;
-			Func<bool> isQualifierClosed = () => enableQualification() && qualifierStart && qualifierEnd;
-			Action escapeQualifier = () => stack.Push(escapedQualifier);
-			Func<bool> isQualifier = () => enableQualification() && c == Settings.TextQualifier;
-			Func<bool> isSeparator = () => c == Settings.ColumnSeparator;
-			Func<bool> peekQualifier = () => enableQualification() && stack.Count > 0 && stack.Peek() == Settings.TextQualifier.ToString();
-			Func<string> pop = () => stack.Count > 0 ? stack.Pop() : null;
-			Func<bool> peekReaderEOL = () => Reader.Peek() > 0 && (char)Reader.Peek() == '\n';
-			Func<bool> eol = () => c == '\n';
-			Func<bool> cr = () => c == '\r';
-
-			Action addCell = () =>
-			{
-				StringBuilder sbuf = new StringBuilder();
-				while (stack.Count > 0)
-				{
-					string txt = pop();
-					if (enableQualification())
-					{
-						if (txt == escapedQualifier)
-						{
-							txt = Settings.TextQualifier.ToString();
-						}
-						else if (txt == Settings.TextQualifier.ToString() && isQualifierOpen())
-						{
-							txt = string.Empty;
-						}
-					}
-					if (!string.IsNullOrEmpty(txt))
-					{
-						sbuf.Insert(0, txt);
-					}
-				}
-				if (columns == null)
-				{
-					columns = new List<string>();
-				}
-				var val = sbuf.ToString();
-				if (val == Settings.NullValue && !isQualifierClosed())
-				{
-					val = null;
-				}
-				columns.Add(val);
-				newCell = true;
-				qualifierEnd = qualifierStart = false;
-			};
-
 			// Line parsing
-			while (Reader.Peek() >= 0)
+			while (PeekChar() >= 0)
 			{
-				c = (char)Reader.Read();
+				c = (char)ReadChar();
 
 				if (newCell)
 				{
@@ -123,58 +200,61 @@ namespace Uncomplicated.Csv
 
 					newCell = false;
 
-					if (eol())
+					if (IsNewLine(c))
 					{
 						// empty row
-						pushStr(string.Empty);
-						break;
-					}
-					if (cr())
-					{
-						// empty row
-						if (peekReaderEOL())
-						{
-							//discard
-							Reader.Read();
-						}
-						pushStr(string.Empty);
+						stack.Push(string.Empty);
 						break;
 					}
 
-					if (isQualifier())
+					else if (IsCarriageReturn(c))
+					{
+						// empty row
+						if (PeekNewLine())
+						{
+							//discard
+							ReadChar();
+						}
+						stack.Push(string.Empty);
+						break;
+					}
+
+					else if (IsQualifier(c))
 					{
 						// text qualified cell
 						qualifierStart = true;
 					}
-					else if (!isSeparator())
+
+					else if (!IsSeparator(c))
 					{
 						// first character
-						push();
+						stack.Push(c);
 					}
+
 					else
 					{
 						// empty cell
-						addCell();
+						AddCell(stack, ref columns, ref newCell, ref qualifierStart, ref qualifierEnd);
 					}
 				}
 
 
 				// Text qualifier
-				else if (isQualifier())
+				else if (IsQualifier(c))
 				{
 					// process text qualifier
 
-					if (isQualifierOpen() && peekQualifier())
+					if (PeekQualifier(stack) && IsQualifierStarted(qualifierStart, qualifierEnd))
 					{
 						// needs escaping
 						// escaped quotes will be resolved when the cell is assembled
-						pop();
-						escapeQualifier();
+						stack.Pop();
+						PushEscapedQualifier(stack);
 					}
 					else
 					{
 						// add qualifier on the stack
-						push();
+						stack.Push(c);
 					}
 				}
 
@@ -183,99 +263,94 @@ namespace Uncomplicated.Csv
 				{
 					// process regular characters
 
-					if (peekQualifier() && isQualifierOpen())
+					if (PeekQualifier(stack) && IsQualifierStarted(qualifierStart, qualifierEnd))
 					{
 						// last qualifier is the closing qualifier
-						pop();
-						pushStr(string.Empty);
+						stack.Pop();
+						stack.Push(string.Empty);
 						qualifierEnd = true;
 					}
 
 					// old mac or windows EOL
-					if (cr() && !isQualifierOpen())
+					if (IsCarriageReturn(c) && !IsQualifierStarted(qualifierStart, qualifierEnd))
 					{
-						if (peekReaderEOL())
+						if (PeekNewLine())
 						{
 							//discard
-							Reader.Read();
+							ReadChar();
 						}
 						break;
 					}
 
 					// unix EOL
-					if (eol() && !isQualifierOpen())
+					else if (IsNewLine(c) && !IsQualifierStarted(qualifierStart, qualifierEnd))
 					{
 						// end of row
 						break;
 					}
 
-					if (isSeparator() && !isQualifierOpen())
+					else if (IsSeparator(c) && !IsQualifierStarted(qualifierStart, qualifierEnd))
 					{
 						// end of cell
-						addCell();
+						AddCell(stack, ref columns, ref newCell, ref qualifierStart, ref qualifierEnd);
 					}
+
 					else
 					{
 						// add character on the stack
-						push();
+						stack.Push(c);
 					}
 				}
 
 			}
 
 			// left over cell
-			if (stack.Count > 0 || isSeparator())
+			if (stack.Count > 0 || IsSeparator(c))
 			{
 				// last cell
-				addCell();
+				AddCell(stack, ref columns, ref newCell, ref qualifierStart, ref qualifierEnd);
 			}
 
-			return columns == null ? null : columns.ToArray();
+			string[] arr = null;
+			if (columns.Count > 0)
+			{
+				arr = new string[columns.Count];
+				columns.CopyTo(arr);
+			}
+
+			return arr;
+			//return columns == null ? null : columns.ToArray();
 		}
 
-		/// <summary>
-		/// Skips a line
-		/// </summary>
-		/// <returns></returns>
-		public string Skip()
+		private int PeekChar()
 		{
-			StringBuilder line = null;
-			char last = '\0';
-			if (Reader.Peek() >= 0)
+			int c = -1;
+
+			if (_bufferOffset == _bufferSize)
 			{
-				line = new StringBuilder();
+				_bufferSize = Reader.Read(_buffer, 0, _buffer.Length);
+				_bufferOffset = 0;
+				if (_bufferSize > 0)
+				{
+					c = _buffer[0];
+				}
+			}
+			else
+			{
+				c = _buffer[_bufferOffset];
 			}
 
-			while (Reader.Peek() >= 0)
+			return c;
+		}
+
+		private int ReadChar()
+		{
+			int c = PeekChar();
+			if (c >= 0)
 			{
-
-				char c = (char)Reader.Peek();
-				if (c == '\r')
-				{
-					Reader.Read();
-				}
-				else if (c == '\n')
-				{
-					Reader.Read();
-					break;
-				}
-				else
-				{
-					if (last != '\r')
-					{
-						Reader.Read();
-						line.Append(c);
-					}
-					else
-					{
-						break;
-					}
-				}
-
-				last = c;
+				++_bufferOffset;
 			}
-
-			return line == null ? null : line.ToString();
+			return c;
 		}
 
 		public void Dispose()

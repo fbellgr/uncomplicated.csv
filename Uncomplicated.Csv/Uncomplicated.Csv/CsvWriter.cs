@@ -8,6 +8,8 @@ namespace Uncomplicated.Csv
 {
 	public class CsvWriter : IDisposable
 	{
+		private readonly object SyncRoot = new object();
+
 		/// <summary>
 		/// Configuration
 		/// </summary>
@@ -52,8 +54,11 @@ namespace Uncomplicated.Csv
 		public void WriteRow(IEnumerable<string> cells)
 		{
 			string row = Settings.CreateRow(cells);
-			Writer.Write(row);
-			Writer.Write(Settings.GetEOL());
+			lock (SyncRoot)
+			{
+				Writer.Write(row);
+				Writer.Write(Settings.GetEOL());
+			}
 		}
 
 		public void Dispose()

@@ -26,15 +26,15 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>full</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
+    <OutputPath>bin\Release\v45\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <DocumentationFile>bin\Release\Uncomplicated.Csv.xml</DocumentationFile>
     <Prefer32Bit>false</Prefer32Bit>
-    <DebugSymbols>true</DebugSymbols>
+    <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -42,8 +42,11 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Uncomplicated.Csv\Collection\FakeStack.cs" />
+    <Compile Include="Uncomplicated.Csv\CsvReader.cs">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="Uncomplicated.Csv\CsvReaderSettings.cs" />
-    <Compile Include="Uncomplicated.Csv\CsvReader.cs" />
     <Compile Include="Uncomplicated.Csv\CsvException.cs" />
     <Compile Include="Uncomplicated.Csv\CsvUtil.cs" />
     <Compile Include="Uncomplicated.Csv\CsvWriter.cs" />

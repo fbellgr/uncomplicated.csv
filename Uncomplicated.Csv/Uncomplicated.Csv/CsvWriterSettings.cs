@@ -14,14 +14,14 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public Encoding Encoding
 		{
-			get { return m_encoding; }
+			get { return _encoding; }
 			set
 			{
-				if (!Readonly) { m_encoding = value; }
+				if (!Readonly) { _encoding = value; }
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.Encoding'")); }
 			}
 		}
-		private Encoding m_encoding = null;
+		private Encoding _encoding = null;
 
 		/// <summary>
 		/// Value to be rendered in place of null. 
@@ -30,18 +30,18 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public string NullValue
 		{
-			get { return m_nullValue ?? string.Empty; }
+			get { return _nullValue; }
 			set
 			{
 				if (!Readonly)
 				{
-					m_nullValue = value;
+					_nullValue = value ?? string.Empty;
 					ValidateSettings();
 				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.NullValue'")); }
 			}
 		}
-		private string m_nullValue = null;
+		private string _nullValue = null;
 
 		/// <summary>
 		/// Character used as column separator. There is no validation so be sure to put something printable in there.
@@ -49,18 +49,18 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public char ColumnSeparator
 		{
-			get { return m_columnSeparator ?? ','; }
+			get { return _columnSeparator; }
 			set
 			{
 				if (!Readonly)
 				{
-					m_columnSeparator = value;
+					_columnSeparator = value;
 					ValidateSettings();
 				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.ColumnSeparator'")); }
 			}
 		}
-		private char? m_columnSeparator = null;
+		private char _columnSeparator = ',';
 
 		/// <summary>
 		/// Determine how the line should end.
@@ -68,14 +68,14 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public CsvNewLineMode NewLineMode
 		{
-			get { return m_newLineMode ?? CsvNewLineMode.Windows; }
+			get { return _newLineMode; }
 			set
 			{
-				if (!Readonly) { m_newLineMode = value; }
+				if (!Readonly) { _newLineMode = value; }
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.NewLineMode'")); }
 			}
 		}
-		private CsvNewLineMode? m_newLineMode = null;
+		private CsvNewLineMode _newLineMode = CsvNewLineMode.Windows;
 
 		/// <summary>
 		/// Character used for text qualification. There is no validation so be sure to put something printable in there.
@@ -83,18 +83,18 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public char TextQualifier
 		{
-			get { return m_textQualifier ?? '"'; }
+			get { return _textQualifier; }
 			set
 			{
 				if (!Readonly)
 				{
-					m_textQualifier = value;
+					_textQualifier = value;
 					ValidateSettings();
 				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.TextQualifier'")); }
 			}
 		}
-		private char? m_textQualifier = null;
+		private char _textQualifier = '"';
 
 		/// <summary>
 		/// Text qualilfication. AsNeeded means that it will be used if a cell contains the column separator 
@@ -103,18 +103,18 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public CsvTextQualification TextQualification
 		{
-			get { return m_textQualification ?? CsvTextQualification.Always; }
+			get { return _textQualification; }
 			set
 			{
 				if (!Readonly)
 				{
-					m_textQualification = value;
+					_textQualification = value;
 					ValidateSettings();
 				}
 				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings.TextQualification'")); }
 			}
 		}
-		private CsvTextQualification? m_textQualification = null;
+		private CsvTextQualification _textQualification = CsvTextQualification.Always;
 
 		public CsvWriterSettings()
 		{
