@@ -38,12 +38,10 @@ namespace Uncomplicated.Csv.Sample
 
 		private static void TestReadFromText()
 		{
-			//			string txt = @"""a"",""b"",""c""
-			//"""",""d"",""""
-			//"""","""",""e""
-			//""f"","""",""""";
-
-			string txt = @"3""33""""3";
+			string txt = @"""a"",""b"",""c""
+"""",""d"",""""
+"""","""",""e""
+""f"","""",""""";
 
 			CsvReaderSettings settings = new CsvReaderSettings();
 			settings.ColumnSeparator = ',';
