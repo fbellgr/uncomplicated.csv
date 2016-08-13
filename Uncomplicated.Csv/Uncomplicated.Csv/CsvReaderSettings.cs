@@ -5,6 +5,9 @@ using System.Text;
 
 namespace Uncomplicated.Csv
 {
+	/// <summary>
+	/// Csv reader
+	/// </summary>
 	public class CsvReaderSettings
 	{
 		internal bool Readonly { get; set; }
@@ -27,6 +30,7 @@ namespace Uncomplicated.Csv
 		/// Value to be interpreted as null
 		/// CANNOT CONTAIN SEPARATOR OR NEWLINE OR TEXT-QUALIFIER.
 		/// This value must not be text-qualified in the source to be considered null.
+		/// Case sensitive.
 		/// Ignored by default.
 		/// </summary>
 		public string NullValue
@@ -46,6 +50,7 @@ namespace Uncomplicated.Csv
 
 		/// <summary>
 		/// Character used as column separator. There is no validation so be sure to put something printable in there.
+		/// Case sensitive.
 		/// Default is comma.
 		/// </summary>
 		public char ColumnSeparator
@@ -65,6 +70,7 @@ namespace Uncomplicated.Csv
 
 		/// <summary>
 		/// Character used for text qualification. There is no validation so be sure to put something printable in there.
+		/// Case sensitive.
 		/// Default is double quotes.
 		/// </summary>
 		public char TextQualifier
@@ -116,9 +122,53 @@ namespace Uncomplicated.Csv
 		}
 		private bool _detectEncodingFromByteOrderMarks = false;
 
-		public CsvReaderSettings()
+		/// <summary>
+		/// Size of internal buffer of the StreamReader in bytes.
+		/// Default is 16k.
+		/// Modifying this has a huge performance when parsing very large files.
+		/// Should be a power of to and a multiple of ParserBufferSize.
+		/// </summary>
+		public int ReaderBufferSize
 		{
+			get { return _readerBufferSize; }
+			set
+			{
+				if (!Readonly)
+				{
+					if (value <= 0)
+					{
+						throw new CsvException("ReaderBufferSize cannot be less than 1");
+					}
+					_readerBufferSize = value;
+				}
+				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.ReaderBufferSize'")); }
+			}
 		}
+		private int _readerBufferSize = 4096 * 4;
+
+		/// <summary>
+		/// Size of internal buffer of the CsvReader in characters.
+		/// Default is 4k.
+		/// Modifying this has a huge performance when parsing very large files.
+		/// Should be a power of to and a factor of ReaderBufferSize.
+		/// </summary>
+		public int ParserBufferSize
+		{
+			get { return _parserBufferSize; }
+			set
+			{
+				if (!Readonly)
+				{
+					if (value <= 0)
+					{
+						throw new CsvException("ParserBufferSize cannot be less than 1");
+					}
+					_parserBufferSize = value;
+				}
+				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.ParserBufferSize'")); }
+			}
+		}
+		private int _parserBufferSize = 4096 * 4;
 
 		internal CsvReaderSettings Clone()
 		{

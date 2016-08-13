@@ -131,7 +131,7 @@ lmop"",""qrsu"",""vwxy""
 """","""","""",""""
 ""x1"",NULL,""y1"",""z1""
 """","""","""",""""
-""fghi"",""jklm"",""nopq"",""rstu""
+""fghi"",""jk,lm"",""no""""pq"",""rstu""
 """","""","""",""""";
 
 			var csv = new List<string[]>() {
@@ -140,7 +140,7 @@ lmop"",""qrsu"",""vwxy""
 				new string[]{ "",		"",		"",		"" },
 				new string[]{ "x1",		null,	"y1",	"z1" },
 				new string[]{ "",		"",		"",		"" },
-				new string[]{ "fghi",	"jklm",	"nopq",	"rstu" },
+				new string[]{ "fghi",	"jk,lm",	"no\"pq",	"rstu" },
 				new string[]{ "",		"",		"",		"" }
 			};
 
@@ -160,7 +160,7 @@ lmop"",""qrsu"",""vwxy""
 			{
 				foreach(var line in csv)
 				{
-					writer.WriteRow(line);
+					writer.WriteRow(line.Select(s=>s));
 				}
 			}
 

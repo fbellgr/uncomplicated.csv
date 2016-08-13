@@ -6,7 +6,8 @@ using System.Text;
 
 namespace Uncomplicated.Csv
 {
-	public class CsvUtil
+
+	internal class CsvUtil
 	{
 		internal static void ValidateCsvSettings(string nullValue, char separator, char textQualifier)
 		{
