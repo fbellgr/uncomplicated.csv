@@ -58,7 +58,7 @@ namespace Uncomplicated.Csv
 			}
 			else
 			{
-				_reader = new StreamReader(stream, settings.Encoding, settings.DetectEncodingFromByteOrderMarks);
+				_reader = new StreamReader(stream, settings.Encoding, settings.DetectEncodingFromByteOrderMarks, Settings.ReaderBufferSize);
 			}
 			Settings.Encoding = _reader.CurrentEncoding;
 			Settings.Readonly = true;
