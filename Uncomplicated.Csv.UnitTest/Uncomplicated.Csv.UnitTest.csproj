@@ -6,8 +6,8 @@
     <ProjectGuid>{24E13E55-9766-4466-A7CB-2D8000C48E00}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>UnitTestProject1</RootNamespace>
-    <AssemblyName>UnitTestProject1</AssemblyName>
+    <RootNamespace>Uncomplicated.Csv.UnitTest</RootNamespace>
+    <AssemblyName>Uncomplicated.Csv.UnitTest</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -37,6 +37,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
   </ItemGroup>
   <Choose>
@@ -60,6 +64,18 @@
       <Project>{e6798640-c0f2-4326-8c10-8ad2dfb619ae}</Project>
       <Name>Uncomplicated.Csv</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="test-read-no-qualifiers.json" />
+    <EmbeddedResource Include="test-read-with-qualifiers.json" />
+    <EmbeddedResource Include="test-read.csv" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="test-write-no-qualifiers.csv" />
+    <EmbeddedResource Include="test-write-with-qualifiers.csv" />
+    <EmbeddedResource Include="test-write-with-qualifiers.json" />
+    <EmbeddedResource Include="test-write-no-qualifiers.json" />
+    <None Include="packages.config" />
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

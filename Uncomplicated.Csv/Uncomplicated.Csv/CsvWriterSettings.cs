@@ -10,11 +10,25 @@ namespace Uncomplicated.Csv
 	/// </summary>
 	public class CsvWriterSettings
 	{
+		/// <summary>
+		/// Delegate definition to customize the reasons for which text-qualifiers should be used.
+		/// </summary>
+		/// <param name="defaultAction">Whether or not the default behaviour is to use text-qualifiers for the current cell.</param>
+		/// <param name="cell"></param>
+		/// <returns></returns>
+		public delegate bool ShouldUseTextQualifiersDelegate(bool defaultAction, string cell);
+
 		internal bool Readonly { get; set; }
 
 		internal const string CR = "\r";
 		internal const string CRLF = "\r\n";
 		internal const string LF = "\n";
+
+		/// <summary>
+		/// Delegate definition to customize the reasons for which text-qualifiers should be used.
+		/// Only works with CsvTextQualification.AsNeeded.
+		/// </summary>
+		public ShouldUseTextQualifiersDelegate ShouldUseTextQualifiers { get; set; }
 
 		/// <summary>
 		/// Encoding of the file.
@@ -167,11 +181,20 @@ namespace Uncomplicated.Csv
 			switch (TextQualification)
 			{
 				case CsvTextQualification.AsNeeded:
-					if (
-						cell.Contains(ColumnSeparator)
+					bool shouldUseQualifiers = cell.Length > 0 && (
+						cell.Contains(_columnSeparator)
 						|| cell.Contains('\r')
 						|| cell.Contains('\n')
-						|| cell.Contains(TextQualifier))
+						|| cell[0] == _textQualifier
+						|| cell == _nullValue
+					);
+
+					if (ShouldUseTextQualifiers != null)
+					{
+						shouldUseQualifiers = ShouldUseTextQualifiers(shouldUseQualifiers, cell);
+					}
+
+					if (shouldUseQualifiers)
 					{
 						cell = TextQualify(cell);
 					}

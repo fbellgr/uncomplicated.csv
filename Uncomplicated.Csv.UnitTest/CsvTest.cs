@@ -5,6 +5,9 @@ using Uncomplicated.Csv;
 using System.Text;
 using System.Linq;
 using System.Collections.Generic;
+using System.Reflection;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 
 namespace Uncomplicated.Csv.UnitTest
 {
@@ -15,26 +18,6 @@ namespace Uncomplicated.Csv.UnitTest
 		public void TestReadQualifierNone()
 		{
 
-			string csv = @"1,2,3,NULL
-a1,""b,c"",""NULL"",d1
-"""","""","""",""""
-x1,NULL,y1,""z1""
-,,,
-""fghi"",""k
-lmop"",""qrsu"",""vwxy""
-,,,
-,,,";
-
-			string expectedResult = @"[1],[2],[3],NULL
-[a1],[""b],[c""],[""NULL""],[d1]
-[""""],[""""],[""""],[""""]
-[x1],NULL,[y1],[""z1""]
-[],[],[],[]
-[""fghi""],[""k]
-[lmop""],[""qrsu""],[""vwxy""]
-[],[],[],[]
-[],[],[],[]";
-
 			var settings = new CsvReaderSettings()
 			{
 				ColumnSeparator = ',',
@@ -44,17 +27,27 @@ lmop"",""qrsu"",""vwxy""
 				TextQualifier = '"'
 			};
 
-			var stream = new MemoryStream(settings.Encoding.GetBytes(csv));
-			var result = new StringBuilder();
 
-			using (var reader = new CsvReader(stream, settings))
+			var rawExpectedResult = new StreamReader(
+				Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-read-no-qualifiers.json")
+			, true).ReadToEnd();
+
+			var jsonExpectedResult = JToken.Parse(rawExpectedResult);
+
+			var csvStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-read.csv");
+
+			var lines = new List<string[]>();
+			using (var reader = new CsvReader(csvStream, settings))
 			{
 				string[] line = null;
 				while ((line = reader.Read()) != null)
 				{
-					result.AppendLine(string.Join(",", line.Select(c => c == null ? "NULL" : string.Format("[{0}]", c))));
+					lines.Add(line);
 				}
 			}
+
+			string result = JsonConvert.SerializeObject(lines, Formatting.Indented);
+			string expectedResult = jsonExpectedResult.ToString(Formatting.Indented);
 
 			Console.WriteLine("Expects:");
 			Console.WriteLine(expectedResult);
@@ -62,32 +55,13 @@ lmop"",""qrsu"",""vwxy""
 			Console.WriteLine("Result:");
 			Console.WriteLine(result);
 
-			Assert.AreEqual(result.ToString().Trim(), expectedResult);
+			Assert.AreEqual(result, expectedResult);
 		}
 
 		[TestMethod]
 		public void TestRead()
 		{
 
-			string expectedResult = @"""1"",""2"",""3"",NULL
-""a1"",""b,c"",""NULL"",""d1""
-"""","""","""",""""
-""x1"",NULL,""y1"",""z1""
-"""","""","""",""""
-""fghi"",""k
-lmop"",""qrsu"",""vwxy""
-"""","""","""",""""
-"""","""","""",""""";
-
-			string csv = @"1,2,3,NULL
-a1,""b,c"",""NULL"",d1
-"""","""","""",""""
-x1,NULL,y1,""z1""
-,,,
-""fghi"",""k
-lmop"",""qrsu"",""vwxy""
-,,,
-,,,";
 
 			var settings = new CsvReaderSettings()
 			{
@@ -98,18 +72,27 @@ lmop"",""qrsu"",""vwxy""
 				TextQualifier = '"'
 			};
 
-			var stream = new MemoryStream(settings.Encoding.GetBytes(csv));
 
-			var result = new StringBuilder();
+			var rawExpectedResult = new StreamReader(
+				Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-read-with-qualifiers.json")
+			, true).ReadToEnd();
 
-			using (var reader = new CsvReader(stream, settings))
+			var jsonExpectedResult = JToken.Parse(rawExpectedResult);
+
+			var csvStream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-read.csv");
+
+			var lines = new List<string[]>();
+			using (var reader = new CsvReader(csvStream, settings))
 			{
 				string[] line = null;
 				while ((line = reader.Read()) != null)
 				{
-					result.AppendLine(string.Join(",", line.Select(c => c == null ? "NULL" : string.Format("\"{0}\"", c))));
+					lines.Add(line);
 				}
 			}
+
+			string result = JsonConvert.SerializeObject(lines, Formatting.Indented);
+			string expectedResult = jsonExpectedResult.ToString(Formatting.Indented);
 
 			Console.WriteLine("Expects:");
 			Console.WriteLine(expectedResult);
@@ -117,8 +100,7 @@ lmop"",""qrsu"",""vwxy""
 			Console.WriteLine("Result:");
 			Console.WriteLine(result);
 
-			Assert.AreEqual(result.ToString().Trim(), expectedResult);
-
+			Assert.AreEqual(result, expectedResult);
 		}
 
 
@@ -126,30 +108,71 @@ lmop"",""qrsu"",""vwxy""
 		public void TestWrite()
 		{
 
-			string expectedResult = @"""1"",""2"",""3"",NULL
-""a1"",""b1"",""NULL"",""c1""
-"""","""","""",""""
-""x1"",NULL,""y1"",""z1""
-"""","""","""",""""
-""fghi"",""jk,lm"",""no""""pq"",""rstu""
-"""","""","""",""""";
+			var expectedResult = new StreamReader(
+				Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-write-with-qualifiers.csv")
+			, true).ReadToEnd().Trim();
 
-			var csv = new List<string[]>() {
-				new string[]{ "1",		"2",	"3",	null },
-				new string[]{ "a1",		"b1",	"NULL",	"c1" },
-				new string[]{ "",		"",		"",		"" },
-				new string[]{ "x1",		null,	"y1",	"z1" },
-				new string[]{ "",		"",		"",		"" },
-				new string[]{ "fghi",	"jk,lm",	"no\"pq",	"rstu" },
-				new string[]{ "",		"",		"",		"" }
-			};
+
+			var src = new StreamReader(
+				Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-write-with-qualifiers.json")
+			, true).ReadToEnd();
+			var jsonSrc = JToken.Parse(src);
 
 			var settings = new CsvWriterSettings()
 			{
 				ColumnSeparator = ',',
 				Encoding = new UTF8Encoding(false),
 				NullValue = "NULL",
-				TextQualification = CsvTextQualification.Always,
+				TextQualification = CsvTextQualification.AsNeeded,
+				TextQualifier = '"',
+				ShouldUseTextQualifiers = (defaultAction, cell) => defaultAction || cell.Contains("a")
+			};
+
+			var stream = new MemoryStream();
+
+
+			using (var writer = new CsvWriter(stream, settings))
+			{
+				foreach (var line in jsonSrc)
+				{
+					var arr = line.Select(s => s.Type == JTokenType.Null ? null : s.ToString()).ToArray();
+					writer.WriteRow(arr);
+				}
+			}
+
+			string result = settings.Encoding.GetString(stream.ToArray());
+
+			Console.WriteLine("Expects:");
+			Console.WriteLine(expectedResult);
+			Console.WriteLine();
+			Console.WriteLine("Result:");
+			Console.WriteLine(result);
+
+			Assert.AreEqual(result.Trim(), expectedResult);
+
+		}
+
+
+		[TestMethod]
+		public void TestWriteQualifierNone()
+		{
+
+			var expectedResult = new StreamReader(
+				Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-write-no-qualifiers.csv")
+			, true).ReadToEnd().Trim();
+
+
+			var src = new StreamReader(
+				Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-write-no-qualifiers.json")
+			, true).ReadToEnd();
+			var jsonSrc = JToken.Parse(src);
+
+			var settings = new CsvWriterSettings()
+			{
+				ColumnSeparator = ',',
+				Encoding = new UTF8Encoding(false),
+				NullValue = "NULL",
+				TextQualification = CsvTextQualification.None,
 				TextQualifier = '"'
 			};
 
@@ -158,9 +181,10 @@ lmop"",""qrsu"",""vwxy""
 
 			using (var writer = new CsvWriter(stream, settings))
 			{
-				foreach(var line in csv)
+				foreach (var line in jsonSrc)
 				{
-					writer.WriteRow(line.Select(s=>s));
+					var arr = line.Select(s => s.Type == JTokenType.Null ? null : s.ToString()).ToArray();
+					writer.WriteRow(arr);
 				}
 			}
 

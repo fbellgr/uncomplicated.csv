@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uncomplicated.Csv", "Uncomplicated.Csv.csproj", "{E6798640-C0F2-4326-8C10-8AD2DFB619AE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uncomplicated.Csv.UnitTest", "..\Uncomplicated.Csv.UnitTest\Uncomplicated.Csv.UnitTest.csproj", "{24E13E55-9766-4466-A7CB-2D8000C48E00}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,16 +23,6 @@ Global
 		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Release|x86.ActiveCfg = Release|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Release|Any CPU.Build.0 = Release|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
