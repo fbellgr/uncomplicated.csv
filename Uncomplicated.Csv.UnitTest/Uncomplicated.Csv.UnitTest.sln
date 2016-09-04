@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uncomplicated.Csv.UnitTest", "Uncomplicated.Csv.UnitTest.csproj", "{24E13E55-9766-4466-A7CB-2D8000C48E00}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{566EA79A-DE10-4EB6-8CDF-4F7CBB1D7AA4}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Uncomplicated.Csv", "..\Uncomplicated.Csv\Uncomplicated.Csv.csproj", "{E6798640-C0F2-4326-8C10-8AD2DFB619AE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{24E13E55-9766-4466-A7CB-2D8000C48E00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6798640-C0F2-4326-8C10-8AD2DFB619AE}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -3,12 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.IO;
-using Uncomplicated.Csv.Collection;
 
 namespace Uncomplicated.Csv
 {
 	/// <summary>
-	/// Class for parsing a csv flat file. Does not care about the type of end of line.
+	/// Csv reader
 	/// </summary>
 	public class CsvReader : IDisposable
 	{
@@ -18,142 +17,60 @@ namespace Uncomplicated.Csv
 		/// Configuration
 		/// </summary>
 		public readonly CsvReaderSettings Settings;
-		private readonly StreamReader Reader;
+		private readonly StreamReader _reader;
 
-		string _escapedQualifier = null;
-		string _qualiferString = null;
-		bool _enableQualification = false;
+		private bool _EOF = false;
+		private bool _enableQualification = false;
+		private int _maxCellCount = 1; // will adjust automatically
+		private int _maxRowCount = 1; // will adjust automatically
+
+		private char _separator = ',';
+		private char _qualifier = '"';
+		private string _nullValue = null;
 
 		private int _bufferOffset = 0;
-		private int _bufferSize = 0;
-		private char[] _buffer = new char[4096];// 4k buffer
+		private int _actualBufferSize = 0;
+		private char[] _buffer = null;
 
+		/// <summary>
+		/// Initializes a reader for a given stream and using default settings
+		/// </summary>
+		/// <param name="stream"></param>
 		public CsvReader(Stream stream)
 			: this(stream, new CsvReaderSettings())
 		{
 		}
 
+		/// <summary>
+		/// Initializes a reader for a given stream and using the specified settings
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="settings"></param>
 		public CsvReader(Stream stream, CsvReaderSettings settings)
 		{
 			this.Settings = settings == null ? new CsvReaderSettings() : settings.Clone();
 
+			Configure();
+
 			if (this.Settings.Encoding == null)
 			{
-				Reader = new StreamReader(stream, settings.DetectEncodingFromByteOrderMarks);
+				_reader = new StreamReader(stream, Encoding.UTF8, settings.DetectEncodingFromByteOrderMarks, Settings.ReaderBufferSize);
 			}
 			else
 			{
-				Reader = new StreamReader(stream, settings.Encoding, settings.DetectEncodingFromByteOrderMarks);
+				_reader = new StreamReader(stream, settings.Encoding, settings.DetectEncodingFromByteOrderMarks, Settings.ReaderBufferSize);
 			}
-			Settings.Encoding = Reader.CurrentEncoding;
+			Settings.Encoding = _reader.CurrentEncoding;
 			Settings.Readonly = true;
+		}
 
+		private void Configure()
+		{
 			_enableQualification = Settings.TextQualification != CsvTextQualification.None;
-			_escapedQualifier = new string(Settings.TextQualifier, 2);
-			_qualiferString = new string(Settings.TextQualifier, 1);
-		}
-
-		private void PushEscapedQualifier(FakeStack stack)
-		{
-			stack.Push(_escapedQualifier);
-		}
-
-		private bool IsQualifierStarted(bool qualifierStart, bool qualifierEnd)
-		{
-			return _enableQualification && qualifierStart && !qualifierEnd;
-		}
-
-		private bool IsQualifierEnded(bool qualifierStart, bool qualifierEnd)
-		{
-			return _enableQualification && qualifierStart && qualifierEnd;
-		}
-
-		private bool IsQualifier(char c)
-		{
-			return _enableQualification && c.Equals(Settings.TextQualifier);
-		}
-
-		private bool IsSeparator(char c)
-		{
-			return c == Settings.ColumnSeparator;
-		}
-
-		private bool PeekQualifier(FakeStack stack)
-		{
-			return stack.Count > 0 && _enableQualification && stack.Peek(Settings.TextQualifier);
-		}
-
-		private bool PeekNewLine()
-		{
-			return PeekChar().Equals((int)'\n');
-		}
-
-		private bool IsNewLine(char c)
-		{
-			return c.Equals('\n');
-		}
-
-		private bool IsCarriageReturn(char c)
-		{
-			return c.Equals('\r');
-		}
-
-		private void AddCell(FakeStack stack, ref List<string> columns, ref bool newCell, ref bool qualifierStart, ref bool qualifierEnd)
-		{
-			var parts = new List<string>();
-			while (stack.Count > 0)
-			{
-				string txt = stack.Pop();
-				if (txt != null)
-				{
-					if (_enableQualification)
-					{
-						if (txt.Length == 2 && txt[0].Equals(Settings.TextQualifier) && txt[1].Equals(Settings.TextQualifier))
-						{
-							txt = _qualiferString;
-							parts.Add(txt);
-						}
-						else if (txt.Length != 1 || !txt[0].Equals(Settings.TextQualifier) || IsQualifierStarted(qualifierStart, qualifierEnd))
-						{
-							parts.Add(txt);
-						}
-					}
-					else
-					{
-						parts.Add(txt);
-					}
-				}
-			}
-
-			if (columns == null)
-			{
-				columns = new List<string>();
-			}
-
-			string val = string.Empty;
-
-			if (parts.Count > 2)
-			{
-				var sbuf = new StringBuilder();
-				for (int i = parts.Count - 1; i >= 0; --i)
-				{
-					sbuf.Append(parts[i]);
-				}
-				val = sbuf.ToString();
-			}
-			else
-			{
-				val = string.Concat(parts.Reverse<string>());
-			}
-
-			if (val.Equals(Settings.NullValue) && !IsQualifierEnded(qualifierStart, qualifierEnd))
-			{
-				val = null;
-			}
-
-			columns.Add(val);
-			newCell = true;
-			qualifierEnd = qualifierStart = false;
+			_nullValue = Settings.NullValue;
+			_qualifier = Settings.TextQualifier;
+			_separator = Settings.ColumnSeparator;
+			_buffer = new char[Settings.ParserBufferSize];
 		}
 
 		/// <summary>
@@ -174,191 +91,216 @@ namespace Uncomplicated.Csv
 		/// <returns></returns>
 		private string[] ReadRow()
 		{
-			if (PeekChar() < 0)
+			if (_EOF)
 			{
 				return null;
 			}
 
-			List<string> columns = null;
-			var stack = new FakeStack();
-			char c = '\0';
-			bool qualifierStart = false;
-			bool qualifierEnd = false;
-			bool newCell = true;
+			List<string> currentRow = null;
 
-			// common operations anonymous helper method
-			// for a better readability of the algorithm
+			// The cell buffer
+			// I suspect that dealing with very short cell content will be less
+			// efficient this way but otherwise the performance gain is huge.
+			// An possible improvement would be to offer a setting that specify that 
+			// short cells are to be expected.
+			var currentCell = new StringBuilder(_maxCellCount);
 
-			// Line parsing
-			while (PeekChar() >= 0)
+			char lastChar = '\0';
+
+			bool startCell = true;
+			bool qualifierOpen = false, qualifierClosed = false;
+			bool qualifierEscaped = false;
+			bool missedEOL = false;
+
+			char currentChar = '\0';
+
+			do
 			{
-				c = (char)ReadChar();
 
-				if (newCell)
+				if (!missedEOL)
 				{
-					// starting new cell
+					// This block of code serves the purpose of retrieving
+					// the next characters in a buffered manner.
 
-					newCell = false;
+					int charCode = -1;
 
-					if (IsNewLine(c))
+					if (_bufferOffset == _actualBufferSize)
 					{
-						// empty row
-						stack.Push(string.Empty);
-						break;
-					}
+						// Replenish the buffer
+						_actualBufferSize = _reader.Read(_buffer, 0, _buffer.Length);
+						_bufferOffset = 0;
 
-					else if (IsCarriageReturn(c))
-					{
-						// empty row
-						if (PeekNewLine())
+						if (_actualBufferSize > 0)
 						{
-							//discard
-							ReadChar();
+							charCode = _buffer[0];
 						}
-						stack.Push(string.Empty);
+					}
+					else
+					{
+						// Next character available in the buffer
+						charCode = _buffer[_bufferOffset];
+					}
+
+					if (charCode >= 0)
+					{
+						++_bufferOffset;
+					}
+
+					if (charCode < 0)
+					{
+						_EOF = true;
+						currentChar = '\0';
+					}
+					else
+					{
+						currentChar = (char)charCode;
+					}
+				}
+				missedEOL = false;
+
+				// EOF or EOL are equivalent in terms of terminating a row
+				bool eol = currentChar == '\n' || lastChar == '\r' || _EOF;
+
+				// EOF, EOL or a delimiter are equivalent in terms of terminating a cell.
+				bool eoc = (eol || currentChar == _separator) && !qualifierOpen;
+
+				if (eoc)
+				{
+					// End of a cell
+
+					int cellLength = currentCell.Length;
+					if (lastChar == '\r' && currentCell.Length > 0)
+					{
+						// Pops the last CR when terminating a line
+						// If this is merely the end of a cell, lastChar will be a delimiter and this will not happen
+						--cellLength;
+					}
+
+					if (cellLength > _maxCellCount)
+					{
+						// For performance reasons, we will always be using the maximum cell length
+						// as the capacity for the cell buffers of subsequent rows.
+						// The strategy will probably need some tuning and take into account abnormal
+						// and spontaneous cell count variations.
+						// For now, this seems to do nicely.
+						_maxCellCount = cellLength;
+					}
+
+					// Construction of the actual cell content
+					string new_cell = currentCell.ToString(0, cellLength);
+
+					// Reset the cell buffer.
+					// When dealing with stringbuilder, clearing seems to be more efficient
+					// than reinitializing with a new instance.
+					currentCell.Clear();
+
+					if (!qualifierClosed && new_cell == _nullValue)
+					{
+						new_cell = null;
+					}
+
+					if (currentRow == null)
+					{
+						currentRow = new List<string>(_maxRowCount);
+					}
+					currentRow.Add(new_cell);
+
+					qualifierClosed = false;
+					qualifierEscaped = false;
+
+					if (eol)
+					{
+						// In the event of an actual EOL or EOF,
+						// we break here.
+
+						if (currentRow.Count > _maxRowCount)
+						{
+							// For performance reasons, we will always be using the maximum cell count
+							// as the capacity of subsequent rows.
+							// The strategy will probably need some tuning and take into account abnormal
+							// and spontaneous cell count variations.
+							// For now, this seems to do nicely.
+							_maxRowCount = currentRow.Count;
+						}
 						break;
 					}
 
-					else if (IsQualifier(c))
+					if (currentChar != '\n' && lastChar == '\r')
 					{
-						// text qualified cell
-						qualifierStart = true;
+						lastChar = '\0';
+						missedEOL = true;
+						// Double back to handle EOL. Peeking would probably more 
+						// efficient but ending lines with CR is not common.
+						continue;
 					}
 
-					else if (!IsSeparator(c))
-					{
-						// first character
-						stack.Push(c);
-					}
-
-					else
-					{
-						// empty cell
-						AddCell(stack, ref columns, ref newCell, ref qualifierStart, ref qualifierEnd);
-					}
+					startCell = true;
 				}
-
-
-				// Text qualifier
-				else if (IsQualifier(c))
-				{
-					// process text qualifier
-
-					if (PeekQualifier(stack) && IsQualifierStarted(qualifierStart, qualifierEnd))
-					{
-						// needs escaping
-						// escaped quotes will be resolved when the cell is assembled
-						stack.Pop();
-						PushEscapedQualifier(stack);
-					}
-					else
-					{
-						// add qualifier on the stack
-						stack.Push(c);
-					}
-				}
-
-				// Other characters
 				else
 				{
-					// process regular characters
+					// Cell content
 
-					if (PeekQualifier(stack) && IsQualifierStarted(qualifierStart, qualifierEnd))
-					{
-						// last qualifier is the closing qualifier
-						stack.Pop();
-						stack.Push(string.Empty);
-						qualifierEnd = true;
-					}
+					bool appendCurrentChar = true;
 
-					// old mac or windows EOL
-					if (IsCarriageReturn(c) && !IsQualifierStarted(qualifierStart, qualifierEnd))
+					if (_enableQualification)
 					{
-						if (PeekNewLine())
+						// If qualification needs  to be handled
+
+						if (startCell && !qualifierOpen && currentChar == _qualifier)
 						{
-							//discard
-							ReadChar();
+							// The qualifier needs to be at the begining of a cell.
+							// Otherwise the cell will be considered as not text qualified.
+							appendCurrentChar = false;
+							qualifierOpen = true;
 						}
-						break;
+						else if (qualifierOpen && currentChar == _qualifier)
+						{
+							// This is an attempt to close a text qualifier.
+							// If the next character is also a qualifier, then it will be
+							// determined that a qualifier has been escaped
+							appendCurrentChar = false;
+							qualifierOpen = false;
+							qualifierClosed = true;
+							qualifierEscaped = false;
+						}
+						else if (currentChar == _qualifier && qualifierClosed && lastChar == _qualifier && !qualifierEscaped)
+						{
+							// Detection of an escaped qualifier
+							// Text qualification is resumed and the current qualifier will be written,
+							qualifierOpen = true;
+							qualifierClosed = false;
+							qualifierEscaped = true;
+						}
 					}
 
-					// unix EOL
-					else if (IsNewLine(c) && !IsQualifierStarted(qualifierStart, qualifierEnd))
+					if (appendCurrentChar)
 					{
-						// end of row
-						break;
+						// Actual cell content
+						currentCell.Append(currentChar);
 					}
 
-					else if (IsSeparator(c) && !IsQualifierStarted(qualifierStart, qualifierEnd))
-					{
-						// end of cell
-						AddCell(stack, ref columns, ref newCell, ref qualifierStart, ref qualifierEnd);
-					}
-
-					else
-					{
-						// add character on the stack
-						stack.Push(c);
-					}
+					// This ain't the beginning of a cell no more.
+					startCell = false;
 				}
+				lastChar = currentChar;
 
 			}
+			// Ultimately, EOF will break the loop.
+			// But it should always explicitly break in the body of the loop
+			while (!_EOF); 
 
-			// left over cell
-			if (stack.Count > 0 || IsSeparator(c))
-			{
-				// last cell
-				AddCell(stack, ref columns, ref newCell, ref qualifierStart, ref qualifierEnd);
-			}
-
-			string[] arr = null;
-			if (columns.Count > 0)
-			{
-				arr = new string[columns.Count];
-				columns.CopyTo(arr);
-			}
-
-			return arr;
-			//return columns == null ? null : columns.ToArray();
+			return currentRow == null ? null : currentRow.ToArray();
 		}
 
-		private int PeekChar()
-		{
-			int c = -1;
-
-			if (_bufferOffset == _bufferSize)
-			{
-				_bufferSize = Reader.Read(_buffer, 0, _buffer.Length);
-				_bufferOffset = 0;
-				if (_bufferSize > 0)
-				{
-					c = _buffer[0];
-				}
-			}
-			else
-			{
-				c = _buffer[_bufferOffset];
-			}
-
-			return c;
-		}
-
-		private int ReadChar()
-		{
-			int c = PeekChar();
-			if (c >= 0)
-			{
-				++_bufferOffset;
-			}
-			return c;
-		}
-
+		/// <summary>
+		/// Closes and disposes of the underlying StreamReader and stream.
+		/// </summary>
 		public void Dispose()
 		{
-			if (Reader != null)
+			if (_reader != null)
 			{
-				Reader.Close();
-				Reader.Dispose();
+				_reader.Close();
+				_reader.Dispose();
 			}
 		}
 	}

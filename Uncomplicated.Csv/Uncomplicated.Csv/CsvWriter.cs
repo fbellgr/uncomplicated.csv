@@ -6,6 +6,9 @@ using System.IO;
 
 namespace Uncomplicated.Csv
 {
+	/// <summary>
+	/// Csv writer
+	/// </summary>
 	public class CsvWriter : IDisposable
 	{
 		private readonly object SyncRoot = new object();
@@ -17,11 +20,20 @@ namespace Uncomplicated.Csv
 
 		private readonly StreamWriter Writer;
 
+		/// <summary>
+		/// Initializesa CsvWriter for a given stream and using the default settings
+		/// </summary>
+		/// <param name="stream"></param>
 		public CsvWriter(Stream stream)
 			: this(stream, new CsvWriterSettings())
 		{
 		}
 
+		/// <summary>
+		/// Initializes a CsvWriter for a given stream and using the specified settings
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="settings"></param>
 		public CsvWriter(Stream stream, CsvWriterSettings settings)
 		{
 			this.Settings = settings == null ? new CsvWriterSettings() : settings.Clone();
@@ -44,16 +56,23 @@ namespace Uncomplicated.Csv
 		/// <param name="cells">Cells to be written</param>
 		public void WriteRow(params string[] cells)
 		{
-			WriteRow(cells.ToList());
+			string row = Settings.CreateRow(cells);
+			Write(row);
 		}
 
 		/// <summary>
 		/// Writes a row
+		/// Most efficiently handled collections are string[] and List&lt;string&gt;
 		/// </summary>
 		/// <param name="cells">Cells to be written</param>
 		public void WriteRow(IEnumerable<string> cells)
 		{
 			string row = Settings.CreateRow(cells);
+			Write(row);
+		}
+
+		private void Write(string row)
+		{
 			lock (SyncRoot)
 			{
 				Writer.Write(row);
@@ -61,6 +80,9 @@ namespace Uncomplicated.Csv
 			}
 		}
 
+		/// <summary>
+		/// Flushes, closes and disposes of the underlying StreamWriter and stream.
+		/// </summary>
 		public void Dispose()
 		{
 			if (Writer != null)

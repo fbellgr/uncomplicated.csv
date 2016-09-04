@@ -5,9 +5,30 @@ using System.Text;
 
 namespace Uncomplicated.Csv
 {
+	/// <summary>
+	/// Csv writer settings
+	/// </summary>
 	public class CsvWriterSettings
 	{
+		/// <summary>
+		/// Delegate definition to customize the reasons for which text-qualifiers should be used.
+		/// </summary>
+		/// <param name="defaultAction">Whether or not the default behaviour is to use text-qualifiers for the current cell.</param>
+		/// <param name="cell"></param>
+		/// <returns></returns>
+		public delegate bool ShouldUseTextQualifiersDelegate(bool defaultAction, string cell);
+
 		internal bool Readonly { get; set; }
+
+		internal const string CR = "\r";
+		internal const string CRLF = "\r\n";
+		internal const string LF = "\n";
+
+		/// <summary>
+		/// Delegate definition to customize the reasons for which text-qualifiers should be used.
+		/// Only works with CsvTextQualification.AsNeeded.
+		/// </summary>
+		public ShouldUseTextQualifiersDelegate ShouldUseTextQualifiers { get; set; }
 
 		/// <summary>
 		/// Encoding of the file.
@@ -116,9 +137,9 @@ namespace Uncomplicated.Csv
 		}
 		private CsvTextQualification _textQualification = CsvTextQualification.Always;
 
-		public CsvWriterSettings()
-		{
-		}
+		//public CsvWriterSettings()
+		//{
+		//}
 
 		/// <summary>
 		/// Qualifies
@@ -127,12 +148,22 @@ namespace Uncomplicated.Csv
 		/// <returns></returns>
 		public string TextQualify(string cell)
 		{
-			cell = string.Concat(
-				TextQualifier,
-				cell.Replace(TextQualifier.ToString(), string.Concat(TextQualifier, TextQualifier)),
-				TextQualifier
-			);
-			return cell;
+			var sbuf = new StringBuilder(cell.Length + 2);
+			sbuf.Append(TextQualifier);
+			for (int i = 0; i < cell.Length; ++i)
+			{
+				var c = cell[i];
+				if (c == TextQualifier)
+				{
+					sbuf.Append(TextQualifier).Append(TextQualifier);
+				}
+				else
+				{
+					sbuf.Append(c);
+				}
+			}
+			sbuf.Append(TextQualifier);
+			return sbuf.ToString();
 		}
 
 		/// <summary>
@@ -150,11 +181,20 @@ namespace Uncomplicated.Csv
 			switch (TextQualification)
 			{
 				case CsvTextQualification.AsNeeded:
-					if (
-						cell.Contains(ColumnSeparator)
+					bool shouldUseQualifiers = cell.Length > 0 && (
+						cell.Contains(_columnSeparator)
 						|| cell.Contains('\r')
 						|| cell.Contains('\n')
-						|| cell.Contains(TextQualifier))
+						|| cell[0] == _textQualifier
+						|| cell == _nullValue
+					);
+
+					if (ShouldUseTextQualifiers != null)
+					{
+						shouldUseQualifiers = ShouldUseTextQualifiers(shouldUseQualifiers, cell);
+					}
+
+					if (shouldUseQualifiers)
 					{
 						cell = TextQualify(cell);
 					}
@@ -174,25 +214,18 @@ namespace Uncomplicated.Csv
 		/// <returns></returns>
 		public string GetEOL()
 		{
-			string eol = string.Empty;
-
 			switch (NewLineMode)
 			{
 				case CsvNewLineMode.OldMac:
-					eol = "\r";
-					break;
+					return CR;
 
 				default:
 				case CsvNewLineMode.Windows:
-					eol = "\r\n";
-					break;
+					return CRLF;
 
 				case CsvNewLineMode.Unix:
-					eol = "\n";
-					break;
+					return LF;
 			}
-
-			return eol;
 		}
 
 		/// <summary>
@@ -202,17 +235,93 @@ namespace Uncomplicated.Csv
 		/// <returns></returns>
 		public string CreateRow(params string[] cells)
 		{
-			return CreateRow(cells.ToList());
+
+			if (cells == null)
+			{
+				throw new ArgumentNullException("cells");
+			}
+
+			string row = string.Empty;
+
+			int count = cells.Length;
+			if (count > 2)
+			{
+				var sbuf = new StringBuilder(count);
+				for (int i = 0; i < count; ++i)
+				{
+					if (i > 0)
+					{
+						sbuf.Append(ColumnSeparator);
+					}
+					sbuf.Append(ConvertCell(cells[i]));
+				}
+				row = sbuf.ToString();
+			}
+			else
+			{
+
+				row = string.Join(
+					new string(ColumnSeparator, 1),
+					Array.ConvertAll(cells, cell => ConvertCell(cell))
+				);
+			}
+
+			return row;
 		}
 
 		/// <summary>
 		/// Produces the data to be written for a single row.
+		/// Most efficiently handled collections are string[] and List&lt;string&gt;
 		/// </summary>
 		/// <param name="cells"></param>
 		/// <returns></returns>
 		public string CreateRow(IEnumerable<string> cells)
 		{
-			string row = string.Join(ColumnSeparator.ToString(), cells.Select(cell => ConvertCell(cell)));
+			string row = string.Empty;
+
+			if (cells == null)
+			{
+				throw new ArgumentNullException("cells");
+			}
+
+			if (cells is IList<string>)
+			{
+				// optimized for IList<string>
+				var items = cells as IList<string>;
+				int count = items is string[]
+					? ((string[])items).Length
+					: items.Count;
+
+				if (count > 2)
+				{
+					var sbuf = new StringBuilder(count);
+					for (int i = 0; i < count; ++i)
+					{
+						if (i > 0)
+						{
+							sbuf.Append(ColumnSeparator);
+						}
+						sbuf.Append(ConvertCell(items[i]));
+					}
+				}
+				else
+				{
+					row = string.Join(new string(ColumnSeparator, 1),
+						items is string[]
+							? Array.ConvertAll((string[])items, cell => ConvertCell(cell))
+							: (
+								items is List<string>
+									? ((List<string>)items).ConvertAll(cell => ConvertCell(cell))
+									: items.Select(cell => ConvertCell(cell))
+							)
+					);
+				}
+			}
+			else
+			{
+				row = string.Join(new string(ColumnSeparator, 1), cells.Select(cell => ConvertCell(cell)));
+			}
+
 			return row;
 		}
 

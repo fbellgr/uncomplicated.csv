@@ -42,7 +42,6 @@
     <Reference Include="Microsoft.CSharp" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Uncomplicated.Csv\Collection\FakeStack.cs" />
     <Compile Include="Uncomplicated.Csv\CsvReader.cs">
       <SubType>Code</SubType>
     </Compile>

@@ -1,0 +1,7 @@
+[
+["abcd","efgh","ijkl","mnop"],
+["12,34","5678","9",""],
+["q\"rst\"u","vwx",""],
+["zy\"","xw",null,"NULL",""],
+["newline\r\ntest","did","it","work","?",""]
+]

@@ -5,9 +5,12 @@ using System.Text;
 
 namespace Uncomplicated.Csv
 {
+	/// <summary>
+	/// Generic csv operation exception
+	/// </summary>
 	public class CsvException : Exception
 	{
-		public CsvException(string message)
+		internal CsvException(string message)
 			: base(message)
 		{
 
