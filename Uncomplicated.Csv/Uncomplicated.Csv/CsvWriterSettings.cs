@@ -303,6 +303,7 @@ namespace Uncomplicated.Csv
 						}
 						sbuf.Append(ConvertCell(items[i]));
 					}
+					row = sbuf.ToString();
 				}
 				else
 				{

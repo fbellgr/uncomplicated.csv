@@ -135,7 +135,7 @@ namespace Uncomplicated.Csv.UnitTest
 			{
 				foreach (var line in jsonSrc)
 				{
-					var arr = line.Select(s => s.Type == JTokenType.Null ? null : s.ToString()).ToArray();
+					var arr = line.Select(s => s.Type == JTokenType.Null ? null : s.ToString()).ToList();
 					writer.WriteRow(arr);
 				}
 			}
@@ -183,7 +183,7 @@ namespace Uncomplicated.Csv.UnitTest
 			{
 				foreach (var line in jsonSrc)
 				{
-					var arr = line.Select(s => s.Type == JTokenType.Null ? null : s.ToString()).ToArray();
+					var arr = line.Select(s => s.Type == JTokenType.Null ? null : s.ToString()).ToList();
 					writer.WriteRow(arr);
 				}
 			}
