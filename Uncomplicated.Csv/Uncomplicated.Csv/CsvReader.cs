@@ -19,7 +19,10 @@ namespace Uncomplicated.Csv
 		public readonly CsvReaderSettings Settings;
 		private readonly StreamReader _reader;
 
+		public Encoding CurrentEncoding { get { return _reader.CurrentEncoding; } }
+
 		private bool _EOF = false;
+		private bool _leaveOpen = false;
 		private bool _enableQualification = false;
 		private int _maxCellCount = 1; // will adjust automatically
 		private int _maxRowCount = 1; // will adjust automatically
@@ -33,11 +36,26 @@ namespace Uncomplicated.Csv
 		private char[] _buffer = null;
 
 		/// <summary>
+		/// True if the end of the file/stream has been reached
+		/// </summary>
+		public bool EOF { get { return _EOF; } }
+
+		/// <summary>
 		/// Initializes a reader for a given stream and using default settings
 		/// </summary>
 		/// <param name="stream"></param>
 		public CsvReader(Stream stream)
-			: this(stream, new CsvReaderSettings())
+			: this(stream, new CsvReaderSettings(), false)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a reader for a given stream and using default settings
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="leaveOpen"></param>
+		public CsvReader(Stream stream, bool leaveOpen)
+			: this(stream, new CsvReaderSettings(), leaveOpen)
 		{
 		}
 
@@ -47,8 +65,20 @@ namespace Uncomplicated.Csv
 		/// <param name="stream"></param>
 		/// <param name="settings"></param>
 		public CsvReader(Stream stream, CsvReaderSettings settings)
+			: this(stream, settings, false)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a reader for a given stream and using the specified settings
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="settings"></param>
+		/// <param name="leaveOpen"></param>
+		public CsvReader(Stream stream, CsvReaderSettings settings, bool leaveOpen)
 		{
 			this.Settings = settings == null ? new CsvReaderSettings() : settings.Clone();
+			this._leaveOpen = leaveOpen;
 
 			Configure();
 
@@ -60,7 +90,6 @@ namespace Uncomplicated.Csv
 			{
 				_reader = new StreamReader(stream, settings.Encoding, settings.DetectEncodingFromByteOrderMarks, Settings.ReaderBufferSize);
 			}
-			Settings.Encoding = _reader.CurrentEncoding;
 			Settings.Readonly = true;
 		}
 
@@ -287,7 +316,7 @@ namespace Uncomplicated.Csv
 			}
 			// Ultimately, EOF will break the loop.
 			// But it should always explicitly break in the body of the loop
-			while (!_EOF); 
+			while (!_EOF);
 
 			return currentRow == null ? null : currentRow.ToArray();
 		}
@@ -297,7 +326,7 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public void Dispose()
 		{
-			if (_reader != null)
+			if (_reader != null && !_leaveOpen)
 			{
 				_reader.Close();
 				_reader.Dispose();

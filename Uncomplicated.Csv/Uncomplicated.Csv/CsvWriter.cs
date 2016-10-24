@@ -19,13 +19,24 @@ namespace Uncomplicated.Csv
 		public readonly CsvWriterSettings Settings;
 
 		private readonly StreamWriter Writer;
+		private bool _leaveOpen = false;
 
 		/// <summary>
 		/// Initializesa CsvWriter for a given stream and using the default settings
 		/// </summary>
 		/// <param name="stream"></param>
 		public CsvWriter(Stream stream)
-			: this(stream, new CsvWriterSettings())
+			: this(stream, new CsvWriterSettings(), false)
+		{
+		}
+
+		/// <summary>
+		/// Initializesa CsvWriter for a given stream and using the default settings
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="leaveOpen"></param>
+		public CsvWriter(Stream stream, bool leaveOpen)
+			: this(stream, new CsvWriterSettings(), leaveOpen)
 		{
 		}
 
@@ -35,8 +46,20 @@ namespace Uncomplicated.Csv
 		/// <param name="stream"></param>
 		/// <param name="settings"></param>
 		public CsvWriter(Stream stream, CsvWriterSettings settings)
+			: this(stream, settings, false)
+		{
+		}
+
+		/// <summary>
+		/// Initializes a CsvWriter for a given stream and using the specified settings
+		/// </summary>
+		/// <param name="stream"></param>
+		/// <param name="settings"></param>
+		/// <param name="leaveOpen"></param>
+		public CsvWriter(Stream stream, CsvWriterSettings settings, bool leaveOpen)
 		{
 			this.Settings = settings == null ? new CsvWriterSettings() : settings.Clone();
+			this._leaveOpen = leaveOpen;
 
 			if (settings.Encoding != null)
 			{
@@ -87,8 +110,12 @@ namespace Uncomplicated.Csv
 		{
 			if (Writer != null)
 			{
-				Writer.Close();
-				Writer.Dispose();
+				Writer.Flush();
+				if (!_leaveOpen)
+				{
+					Writer.Close();
+					Writer.Dispose();
+				}
 			}
 		}
 	}
