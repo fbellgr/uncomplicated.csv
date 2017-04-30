@@ -45,6 +45,20 @@ namespace Uncomplicated.Csv
 		private Encoding _encoding = null;
 
 		/// <summary>
+		/// Specifies whether each row, when written to the stream, should end with a new line. Default is true for backward compatibility.
+		/// </summary>
+		public bool EndsWithNewLine
+		{
+			get { return _endsWithNewLine; }
+			set
+			{
+				if (!Readonly) { _endsWithNewLine = value; }
+				else { throw new CsvException(string.Concat("Read only property 'CsvWriterSettings._endsWithNewLine'")); }
+			}
+		}
+		private bool _endsWithNewLine = true;
+
+		/// <summary>
 		/// Value to be rendered in place of null. 
 		/// CANNOT CONTAIN SEPARATOR OR NEWLINE OR TEXT-QUALIFIER.
 		/// Default is empty.

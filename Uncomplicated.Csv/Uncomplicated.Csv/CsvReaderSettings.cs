@@ -124,9 +124,9 @@ namespace Uncomplicated.Csv
 
 		/// <summary>
 		/// Size of internal buffer of the StreamReader in bytes.
-		/// Default is 16k.
-		/// Modifying this has a huge performance when parsing very large files.
-		/// Should be a power of to and a multiple of ParserBufferSize.
+		/// Default is 64k.
+		/// Modifying this has a huge performance impact when parsing very large files.
+		/// Should be a power of two and a multiple of ParserBufferSize.
 		/// </summary>
 		public int ReaderBufferSize
 		{
@@ -144,13 +144,13 @@ namespace Uncomplicated.Csv
 				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.ReaderBufferSize'")); }
 			}
 		}
-		private int _readerBufferSize = 4096 * 4;
+		private int _readerBufferSize = 64 * 1024;
 
 		/// <summary>
 		/// Size of internal buffer of the CsvReader in characters.
-		/// Default is 4k.
-		/// Modifying this has a huge performance when parsing very large files.
-		/// Should be a power of to and a factor of ReaderBufferSize.
+		/// Default is 16k.
+		/// Modifying this has a huge performance impact when parsing very large files.
+		/// Should be a power of two and a factor of ReaderBufferSize.
 		/// </summary>
 		public int ParserBufferSize
 		{
@@ -168,7 +168,7 @@ namespace Uncomplicated.Csv
 				else { throw new CsvException(string.Concat("Read only property 'CsvReaderSettings.ParserBufferSize'")); }
 			}
 		}
-		private int _parserBufferSize = 4096 * 4;
+		private int _parserBufferSize = 16 * 1024;
 
 		internal CsvReaderSettings Clone()
 		{

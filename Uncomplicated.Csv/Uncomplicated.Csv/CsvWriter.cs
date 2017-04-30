@@ -18,8 +18,18 @@ namespace Uncomplicated.Csv
 		/// </summary>
 		public readonly CsvWriterSettings Settings;
 
+		/// <summary>
+		/// Number of rows written to the stream
+		/// </summary>
+		public long RowCount { get { lock (SyncRoot) { return _rowCount; } } }
+		private long _rowCount = 0;
+
 		private readonly StreamWriter Writer;
 		private bool _leaveOpen = false;
+
+
+		private string _eol;
+		private bool _endsWithNewLine;
 
 		/// <summary>
 		/// Initializesa CsvWriter for a given stream and using the default settings
@@ -71,6 +81,13 @@ namespace Uncomplicated.Csv
 			}
 			Settings.Encoding = Writer.Encoding;
 			Settings.Readonly = true;
+			Configure();
+		}
+
+		private void Configure()
+		{
+			_eol = Settings.GetEOL();
+			_endsWithNewLine = Settings.EndsWithNewLine;
 		}
 
 		/// <summary>
@@ -98,8 +115,26 @@ namespace Uncomplicated.Csv
 		{
 			lock (SyncRoot)
 			{
+				if (!_endsWithNewLine && _rowCount > 0)
+				{
+					Writer.Write(_eol);
+				}
+
 				Writer.Write(row);
-				Writer.Write(Settings.GetEOL());
+				++_rowCount;
+
+				if (_endsWithNewLine)
+				{
+					Writer.Write(_eol);
+				}
+			}
+		}
+
+		private void Flush()
+		{
+			lock (SyncRoot)
+			{
+				Writer.Flush();
 			}
 		}
 

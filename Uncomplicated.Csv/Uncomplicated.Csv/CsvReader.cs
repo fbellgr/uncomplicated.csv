@@ -12,6 +12,7 @@ namespace Uncomplicated.Csv
 	public class CsvReader : IDisposable
 	{
 		private readonly object SyncRoot = new object();
+		private readonly object SyncPeek = new object();
 
 		/// <summary>
 		/// Configuration
@@ -19,6 +20,9 @@ namespace Uncomplicated.Csv
 		public readonly CsvReaderSettings Settings;
 		private readonly StreamReader _reader;
 
+		/// <summary>
+		/// Current encoding
+		/// </summary>
 		public Encoding CurrentEncoding { get { return _reader.CurrentEncoding; } }
 
 		private bool _EOF = false;
@@ -38,7 +42,13 @@ namespace Uncomplicated.Csv
 		/// <summary>
 		/// True if the end of the file/stream has been reached
 		/// </summary>
-		public bool EOF { get { return _EOF; } }
+		public bool EOF { get { return _EOF && !_peeked; } }
+
+		/// <summary>
+		/// Number of rows read to the stream
+		/// </summary>
+		public long RowCount { get { lock (SyncRoot) { return _rowCount; } } }
+		private long _rowCount = 0;
 
 		/// <summary>
 		/// Initializes a reader for a given stream and using default settings
@@ -103,29 +113,71 @@ namespace Uncomplicated.Csv
 		}
 
 		/// <summary>
-		/// Reads one row in the stream. Does not care whether there are carriage returns or not.
+		/// Reads one row in the stream.
 		/// </summary>
 		/// <returns></returns>
 		public string[] Read()
 		{
 			lock (SyncRoot)
 			{
-				return ReadRow();
+				ReadRow(false);
+
+				if (_currentRow == null)
+				{
+					return null;
+				}
+				else
+				{
+					++_rowCount;
+					return _currentRow.ToArray();
+				}
 			}
 		}
+
+		/// <summary>
+		/// Peeks the next row in the stream.
+		/// </summary>
+		/// <returns></returns>
+		public string[] Peek()
+		{
+			lock (SyncRoot)
+			{
+				ReadRow(true);
+
+				if (_currentRow == null)
+				{
+					return null;
+				}
+				else
+				{
+					return _currentRow.ToArray();
+				}
+			}
+		}
+
+		private List<string> _currentRow = null;
+		private bool _peeked = false;
 
 		/// <summary>
 		/// Reads one row in the stream. Does not care whether there are carriage returns or not.
 		/// </summary>
 		/// <returns></returns>
-		private string[] ReadRow()
+		private void ReadRow(bool peek)
 		{
-			if (_EOF)
+			if (_peeked)
 			{
-				return null;
+				_peeked = peek;
+				return;
 			}
 
-			List<string> currentRow = null;
+			_peeked = peek;
+
+			_currentRow = null;
+
+			if (_EOF)
+			{
+				return;
+			}
 
 			// The cell buffer
 			// I suspect that dealing with very short cell content will be less
@@ -228,11 +280,11 @@ namespace Uncomplicated.Csv
 						new_cell = null;
 					}
 
-					if (currentRow == null)
+					if (_currentRow == null)
 					{
-						currentRow = new List<string>(_maxRowCount);
+						_currentRow = new List<string>(_maxRowCount);
 					}
-					currentRow.Add(new_cell);
+					_currentRow.Add(new_cell);
 
 					qualifierClosed = false;
 					qualifierEscaped = false;
@@ -242,14 +294,14 @@ namespace Uncomplicated.Csv
 						// In the event of an actual EOL or EOF,
 						// we break here.
 
-						if (currentRow.Count > _maxRowCount)
+						if (_currentRow.Count > _maxRowCount)
 						{
 							// For performance reasons, we will always be using the maximum cell count
 							// as the capacity of subsequent rows.
 							// The strategy will probably need some tuning and take into account abnormal
 							// and spontaneous cell count variations.
 							// For now, this seems to do nicely.
-							_maxRowCount = currentRow.Count;
+							_maxRowCount = _currentRow.Count;
 						}
 						break;
 					}
@@ -318,7 +370,15 @@ namespace Uncomplicated.Csv
 			// But it should always explicitly break in the body of the loop
 			while (!_EOF);
 
-			return currentRow == null ? null : currentRow.ToArray();
+			//if (currentRow == null)
+			//{
+			//	return null;
+			//}
+			//else
+			//{
+			//	++_rowCount;
+			//return _currentRow;
+			//}
 		}
 
 		/// <summary>
