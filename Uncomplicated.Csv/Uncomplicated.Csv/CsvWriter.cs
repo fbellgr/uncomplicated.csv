@@ -130,7 +130,7 @@ namespace Uncomplicated.Csv
 			}
 		}
 
-		private void Flush()
+		public void Flush()
 		{
 			lock (SyncRoot)
 			{
