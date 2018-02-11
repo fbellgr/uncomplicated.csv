@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
+using System.Text.RegularExpressions;
 
 namespace Uncomplicated.Csv.UnitTest
 {
@@ -110,7 +111,7 @@ namespace Uncomplicated.Csv.UnitTest
 
 			var expectedResult = new StreamReader(
 				Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-write-with-qualifiers.csv")
-			, true).ReadToEnd().Trim();
+			, true).ReadToEnd();
 
 
 			var src = new StreamReader(
@@ -123,6 +124,7 @@ namespace Uncomplicated.Csv.UnitTest
 				ColumnSeparator = ',',
 				Encoding = new UTF8Encoding(false),
 				NullValue = "NULL",
+				NewLineMode = CsvNewLineMode.Windows,
 				TextQualification = CsvTextQualification.AsNeeded,
 				TextQualifier = '"',
 				ShouldUseTextQualifiers = (defaultAction, cell) => defaultAction || cell.Contains("a")
@@ -148,7 +150,7 @@ namespace Uncomplicated.Csv.UnitTest
 			Console.WriteLine("Result:");
 			Console.WriteLine(result);
 
-			Assert.AreEqual(result.Trim(), expectedResult);
+			Assert.AreEqual(result, expectedResult);
 
 		}
 
@@ -159,7 +161,7 @@ namespace Uncomplicated.Csv.UnitTest
 
 			var expectedResult = new StreamReader(
 				Assembly.GetExecutingAssembly().GetManifestResourceStream("Uncomplicated.Csv.UnitTest.test-write-no-qualifiers.csv")
-			, true).ReadToEnd().Trim();
+			, true).ReadToEnd();
 
 
 			var src = new StreamReader(
@@ -173,6 +175,7 @@ namespace Uncomplicated.Csv.UnitTest
 				Encoding = new UTF8Encoding(false),
 				NullValue = "NULL",
 				TextQualification = CsvTextQualification.None,
+				NewLineMode = CsvNewLineMode.Windows,
 				TextQualifier = '"'
 			};
 
@@ -196,7 +199,7 @@ namespace Uncomplicated.Csv.UnitTest
 			Console.WriteLine("Result:");
 			Console.WriteLine(result);
 
-			Assert.AreEqual(result.Trim(), expectedResult);
+			Assert.AreEqual(result, expectedResult);
 
 		}
 	}

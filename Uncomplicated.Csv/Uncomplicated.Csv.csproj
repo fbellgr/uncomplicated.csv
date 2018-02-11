@@ -1,72 +1,41 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{E6798640-C0F2-4326-8C10-8AD2DFB619AE}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Uncomplicated.Csv</RootNamespace>
-    <AssemblyName>Uncomplicated.Csv</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Debug\Uncomplicated.Csv.xml</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>none</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\v45\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <DocumentationFile>bin\Release\Uncomplicated.Csv.xml</DocumentationFile>
-    <Prefer32Bit>false</Prefer32Bit>
-    <DebugSymbols>false</DebugSymbols>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Uncomplicated.Csv\CsvReader.cs">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="Uncomplicated.Csv\CsvReaderSettings.cs" />
-    <Compile Include="Uncomplicated.Csv\CsvException.cs" />
-    <Compile Include="Uncomplicated.Csv\CsvUtil.cs" />
-    <Compile Include="Uncomplicated.Csv\CsvWriter.cs" />
-    <Compile Include="Uncomplicated.Csv\CsvWriterSettings.cs" />
-    <Compile Include="Uncomplicated.Csv\Enums.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="License" />
-    <None Include="Readme" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <PropertyGroup>
-    <PostBuildEvent>
-    </PostBuildEvent>
-  </PropertyGroup>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>netcoreapp2.0;netstandard2.0;net40;net45;net46;net47</TargetFrameworks>
+		<Version>1.5.6</Version>
+		<PackageReleaseNotes>Made to ignore the last unqualified empty line when reading.</PackageReleaseNotes>
+		<AssemblyVersion>1.5.6.0</AssemblyVersion>
+		<FileVersion>1.5.6.0</FileVersion>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageProjectUrl>https://github.com/fbellgr/uncomplicated.csv</PackageProjectUrl>
+		<PackageLicenseUrl>https://raw.githubusercontent.com/fbellgr/uncomplicated.csv/master/Uncomplicated.Csv/License</PackageLicenseUrl>
+		<RepositoryUrl>https://github.com/fbellgr/uncomplicated.csv</RepositoryUrl>
+		<RepositoryType />
+		<Copyright>fbellgr</Copyright>
+		<Company></Company>
+		<Authors>fbellgr</Authors>
+		<Description>Customizable null values, text qualifiers and field delimiters.
+Fields are read as strings and types have to be handled by the programmer.
+Allows for variable column counts throughout the stream, both while reading and writing.</Description>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp2.0|AnyCPU'">
+		<DocumentationFile>bin\Release\netcoreapp2.0\Uncomplicated.Csv.xml;</DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
+		<DocumentationFile>bin\Release\netstandard2.0\Uncomplicated.Csv.xml</DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
+		<DocumentationFile>bin\Release\net40\Uncomplicated.Csv.xml</DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
+		<DocumentationFile>bin\Release\net45\Uncomplicated.Csv.xml</DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
+		<DocumentationFile>bin\Release\net46\Uncomplicated.Csv.xml</DocumentationFile>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net47|AnyCPU'">
+		<DocumentationFile>bin\Release\net47\Uncomplicated.Csv.xml</DocumentationFile>
+	</PropertyGroup>
+
 </Project>

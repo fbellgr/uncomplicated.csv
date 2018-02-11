@@ -39,6 +39,10 @@ namespace Uncomplicated.Csv
 		private int _actualBufferSize = 0;
 		private char[] _buffer = null;
 
+		private List<string> _currentRow = null;
+		private List<bool> _currentRowQualification = null;
+		private bool _peeked = false;
+
 		/// <summary>
 		/// True if the end of the file/stream has been reached
 		/// </summary>
@@ -155,9 +159,6 @@ namespace Uncomplicated.Csv
 			}
 		}
 
-		private List<string> _currentRow = null;
-		private bool _peeked = false;
-
 		/// <summary>
 		/// Reads one row in the stream. Does not care whether there are carriage returns or not.
 		/// </summary>
@@ -173,6 +174,7 @@ namespace Uncomplicated.Csv
 			_peeked = peek;
 
 			_currentRow = null;
+			_currentRowQualification = null;
 
 			if (_EOF)
 			{
@@ -189,7 +191,7 @@ namespace Uncomplicated.Csv
 			char lastChar = '\0';
 
 			bool startCell = true;
-			bool qualifierOpen = false, qualifierClosed = false;
+			bool qualifierOpen = false, qualifierClosed = false, qualified = false;
 			bool qualifierEscaped = false;
 			bool missedEOL = false;
 
@@ -283,11 +285,14 @@ namespace Uncomplicated.Csv
 					if (_currentRow == null)
 					{
 						_currentRow = new List<string>(_maxRowCount);
+						_currentRowQualification = new List<bool>(_maxRowCount);
 					}
 					_currentRow.Add(new_cell);
+					_currentRowQualification.Add(qualified);
 
 					qualifierClosed = false;
 					qualifierEscaped = false;
+					qualified = false;
 
 					if (eol)
 					{
@@ -333,6 +338,7 @@ namespace Uncomplicated.Csv
 							// Otherwise the cell will be considered as not text qualified.
 							appendCurrentChar = false;
 							qualifierOpen = true;
+							qualified = true;
 						}
 						else if (qualifierOpen && currentChar == _qualifier)
 						{
@@ -349,6 +355,7 @@ namespace Uncomplicated.Csv
 							// Detection of an escaped qualifier
 							// Text qualification is resumed and the current qualifier will be written,
 							qualifierOpen = true;
+							qualified = true;
 							qualifierClosed = false;
 							qualifierEscaped = true;
 						}
@@ -370,15 +377,12 @@ namespace Uncomplicated.Csv
 			// But it should always explicitly break in the body of the loop
 			while (!_EOF);
 
-			//if (currentRow == null)
-			//{
-			//	return null;
-			//}
-			//else
-			//{
-			//	++_rowCount;
-			//return _currentRow;
-			//}
+			// ignore the last unqualified lonely cell of the file
+			// this is the empty line most csv files have
+			if (EOF && _currentRow?.Count == 1 && !_currentRowQualification[0])
+			{
+				_currentRow = null;
+			}
 		}
 
 		/// <summary>
