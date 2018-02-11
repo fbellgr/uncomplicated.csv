@@ -2,12 +2,10 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>netcoreapp2.0;netstandard2.0;net40;net45;net46;net47</TargetFrameworks>
-		<Version>1.5.5</Version>
-		<PackageReleaseNotes>Exposed CsvWriter.Flush
-The real reason of this release is porting the project to a multi-targeting .NET Core project.
-Now supported: netcoreapp2.0;netstandard2.0;net40;net45;net46;net47</PackageReleaseNotes>
-		<AssemblyVersion>1.5.5.0</AssemblyVersion>
-		<FileVersion>1.5.5.0</FileVersion>
+		<Version>1.5.6</Version>
+		<PackageReleaseNotes>Made to ignore the last unqualified empty line when reading.</PackageReleaseNotes>
+		<AssemblyVersion>1.5.6.0</AssemblyVersion>
+		<FileVersion>1.5.6.0</FileVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageProjectUrl>https://github.com/fbellgr/uncomplicated.csv</PackageProjectUrl>
 		<PackageLicenseUrl>https://raw.githubusercontent.com/fbellgr/uncomplicated.csv/master/Uncomplicated.Csv/License</PackageLicenseUrl>

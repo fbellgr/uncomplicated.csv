@@ -130,6 +130,9 @@ namespace Uncomplicated.Csv
 			}
 		}
 
+		/// <summary>
+		/// Flushes the internal StreamWriter
+		/// </summary>
 		public void Flush()
 		{
 			lock (SyncRoot)
