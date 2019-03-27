@@ -1,11 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>netcoreapp2.0;netstandard2.0;net40;net45;net46;net47</TargetFrameworks>
-		<Version>1.5.6</Version>
-		<PackageReleaseNotes>Made to ignore the last unqualified empty line when reading.</PackageReleaseNotes>
-		<AssemblyVersion>1.5.6.0</AssemblyVersion>
-		<FileVersion>1.5.6.0</FileVersion>
+		<TargetFrameworks>netcoreapp2.0;netstandard2.0;net40;net45;net46;net461;net462;net47</TargetFrameworks>
+		<Version>1.5.7</Version>
+    <PackageReleaseNotes>The last line was ignored if it contianed only one column. The intention was to remove the last empty line. It works as intended now.</PackageReleaseNotes>
+		<AssemblyVersion>1.5.7.0</AssemblyVersion>
+		<FileVersion>1.5.7.0</FileVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageProjectUrl>https://github.com/fbellgr/uncomplicated.csv</PackageProjectUrl>
 		<PackageLicenseUrl>https://raw.githubusercontent.com/fbellgr/uncomplicated.csv/master/Uncomplicated.Csv/License</PackageLicenseUrl>
@@ -19,23 +19,8 @@ Fields are read as strings and types have to be handled by the programmer.
 Allows for variable column counts throughout the stream, both while reading and writing.</Description>
 	</PropertyGroup>
 
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netcoreapp2.0|AnyCPU'">
-		<DocumentationFile>bin\Release\netcoreapp2.0\Uncomplicated.Csv.xml;</DocumentationFile>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|netstandard2.0|AnyCPU'">
-		<DocumentationFile>bin\Release\netstandard2.0\Uncomplicated.Csv.xml</DocumentationFile>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net40|AnyCPU'">
-		<DocumentationFile>bin\Release\net40\Uncomplicated.Csv.xml</DocumentationFile>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net45|AnyCPU'">
-		<DocumentationFile>bin\Release\net45\Uncomplicated.Csv.xml</DocumentationFile>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net46|AnyCPU'">
-		<DocumentationFile>bin\Release\net46\Uncomplicated.Csv.xml</DocumentationFile>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net47|AnyCPU'">
-		<DocumentationFile>bin\Release\net47\Uncomplicated.Csv.xml</DocumentationFile>
+	<PropertyGroup>
+		<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\Uncomplicated.Csv.xml</DocumentationFile>
 	</PropertyGroup>
 
 </Project>
