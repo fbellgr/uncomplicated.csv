@@ -3,7 +3,7 @@
 	<PropertyGroup>
 		<TargetFrameworks>netcoreapp2.0;netstandard2.0;net40;net45;net46;net461;net462;net47</TargetFrameworks>
 		<Version>1.5.7</Version>
-    <PackageReleaseNotes>The last line was ignored if it contianed only one column. The intention was to remove the last empty line. It works as intended now.</PackageReleaseNotes>
+    <PackageReleaseNotes>The last line was ignored if it contained only one column. The intention was to remove the last empty line. It works as intended now.</PackageReleaseNotes>
 		<AssemblyVersion>1.5.7.0</AssemblyVersion>
 		<FileVersion>1.5.7.0</FileVersion>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
